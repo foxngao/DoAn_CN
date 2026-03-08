@@ -538,10 +538,3 @@ This command will show which variables are missing.
 
 ---
 
-## Final Note
-
-If you want, I can also extend this README with advanced sections:
-
-- Detailed role ↔ frontend route mapping
-- Endpoint catalog by backend module
-- Copy-paste release/rollback SOP checklist for every deployment
