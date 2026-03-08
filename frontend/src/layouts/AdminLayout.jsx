@@ -1,8 +1,6 @@
-import React, { useState } from "react";
+import React, { Suspense, lazy, useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import ChatWrapper from "../components/chat/ChatWrapper.jsx";
-import ChatbotWidget from "../components/Chatbot/ChatbotWidget.jsx";
 import { 
   LayoutDashboard, 
   Users, 
@@ -25,6 +23,9 @@ import {
   MessageSquare,
   Newspaper
 } from 'lucide-react';
+
+const ChatWrapper = lazy(() => import("../components/chat/ChatWrapper.jsx"));
+const ChatbotWidget = lazy(() => import("../components/Chatbot/ChatbotWidget.jsx"));
 
 const SidebarItem = ({ to, icon: Icon, label, badge }) => {
   const location = useLocation();
@@ -199,10 +200,12 @@ function AdminLayout() {
       </div>
 
       {/* Chat Widgets */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4">
-        <ChatWrapper />
-        <ChatbotWidget />
-      </div>
+      <Suspense fallback={null}>
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4">
+          <ChatWrapper />
+          <ChatbotWidget />
+        </div>
+      </Suspense>
     </div>
   );
 }

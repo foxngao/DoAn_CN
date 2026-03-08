@@ -1,8 +1,6 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom"; 
 import { useAuth } from "../auth/AuthContext";
-import ChatbotWidget from "../components/Chatbot/ChatbotWidget";
-import ChatWrapper from "../components/chat/ChatWrapper";
 import { 
   Calendar, 
   FileText, 
@@ -16,6 +14,9 @@ import {
   MessageSquare,
   Newspaper
 } from 'lucide-react';
+
+const ChatbotWidget = lazy(() => import("../components/Chatbot/ChatbotWidget"));
+const ChatWrapper = lazy(() => import("../components/chat/ChatWrapper"));
 
 const SidebarItem = ({ to, icon: Icon, label }) => {
   const location = useLocation();
@@ -152,10 +153,12 @@ const PatientLayout = () => {
       </div>
 
       {/* Widgets */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4">
-        <ChatWrapper />
-        <ChatbotWidget />
-      </div>
+      <Suspense fallback={null}>
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4">
+          <ChatWrapper />
+          <ChatbotWidget />
+        </div>
+      </Suspense>
     </>
   );
 };

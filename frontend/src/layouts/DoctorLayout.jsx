@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { Suspense, lazy, useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import ChatWrapper from "../components/chat/ChatWrapper.jsx";
 import {
   LayoutDashboard,
   Calendar,
@@ -22,6 +21,8 @@ import {
 } from "lucide-react";
 import axios from "../api/axiosClient";
 import toast from "react-hot-toast";
+
+const ChatWrapper = lazy(() => import("../components/chat/ChatWrapper.jsx"));
 
 // Component hiển thị cấp bậc
 const CapBacBadge = ({ capBac }) => {
@@ -312,7 +313,9 @@ const DoctorLayout = () => {
           </div>
         </main>
       </div>
-      <ChatWrapper />
+      <Suspense fallback={null}>
+        <ChatWrapper />
+      </Suspense>
     </>
   );
 };

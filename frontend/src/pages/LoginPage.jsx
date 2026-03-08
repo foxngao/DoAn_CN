@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { Suspense, lazy, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "../api/axiosClient";
 import toast from "react-hot-toast";
-import ChatbotWidget from "../components/Chatbot/ChatbotWidget.jsx";
+
+const ChatbotWidget = lazy(() => import("../components/Chatbot/ChatbotWidget.jsx"));
 
 
 
@@ -249,9 +250,11 @@ function LoginPage() {
           </Link>
         </p>
       </div>
-      <div className="flex flex-col justify-end p-4 space-y-4 bg-transparent">
-        <ChatbotWidget />
-      </div>
+      <Suspense fallback={null}>
+        <div className="flex flex-col justify-end p-4 space-y-4 bg-transparent">
+          <ChatbotWidget />
+        </div>
+      </Suspense>
     </div>
   );
 }
