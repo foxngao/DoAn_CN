@@ -1,0 +1,21 @@
+const LICH_KHAM_STATUS = Object.freeze({
+  CHO_THANH_TOAN: 'CHO_THANH_TOAN',
+  DA_THANH_TOAN: 'DA_THANH_TOAN',
+  DA_HUY: 'DA_HUY',
+});
+
+const HOA_DON_STATUS = Object.freeze({
+  CHUA_THANH_TOAN: 'CHUA_THANH_TOAN',
+  DA_THANH_TOAN: 'DA_THANH_TOAN',
+  DA_HUY: 'DA_HUY',
+});
+
+const LICH_KHAM_STATUS_VALUES = Object.freeze(Object.values(LICH_KHAM_STATUS));
+const HOA_DON_STATUS_VALUES = Object.freeze(Object.values(HOA_DON_STATUS));
+
+module.exports = {
+  LICH_KHAM_STATUS,
+  LICH_KHAM_STATUS_VALUES,
+  HOA_DON_STATUS,
+  HOA_DON_STATUS_VALUES,
+};
