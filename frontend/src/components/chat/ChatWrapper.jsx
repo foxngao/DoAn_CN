@@ -30,6 +30,8 @@ import {
 } from '../../services/chat/socketService.js'; 
 import toast from 'react-hot-toast';
 
+const CONTACTS_CACHE_MS = 30 * 1000;
+
 // --- Biểu tượng ---
 const ChatIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
@@ -85,6 +87,46 @@ const ChatWrapper = () => {
   const selectedContactRef = useRef(selectedContact);
   const isOpenRef = useRef(isOpen);
   const currentViewRef = useRef(currentView);
+  const contactsCacheRef = useRef({
+    data: [],
+    fetchedAt: 0,
+    inFlight: null,
+  });
+
+  const fetchContacts = async ({ force = false } = {}) => {
+    if (!maTK) return [];
+
+    const cache = contactsCacheRef.current;
+    const now = Date.now();
+    const cacheValid = !force && cache.data.length > 0 && now - cache.fetchedAt < CONTACTS_CACHE_MS;
+
+    if (cacheValid) {
+      return cache.data;
+    }
+
+    if (cache.inFlight) {
+      return cache.inFlight;
+    }
+
+    cache.inFlight = axiosClient
+      .get('/chat/contacts', { params: { page: 1, limit: 200 } })
+      .then((res) => {
+        const nextContacts = res.data.data || [];
+        contactsCacheRef.current = {
+          data: nextContacts,
+          fetchedAt: Date.now(),
+          inFlight: null,
+        };
+        setContacts(nextContacts);
+        return nextContacts;
+      })
+      .catch((err) => {
+        contactsCacheRef.current.inFlight = null;
+        throw err;
+      });
+
+    return cache.inFlight;
+  };
 
   useEffect(() => { contactsRef.current = contacts; }, [contacts]);
   useEffect(() => { selectedContactRef.current = selectedContact; }, [selectedContact]);
@@ -162,9 +204,7 @@ const ChatWrapper = () => {
     const handleChatAccepted = ({ roomName, partnerId }) => {
       setPendingTo(null);
 
-      axiosClient
-        .get('/chat/contacts')
-        .then((res) => setContacts(res.data.data || []))
+      fetchContacts({ force: true })
         .catch((err) => console.error('Lỗi tải lại danh bạ:', err));
 
       const selected = selectedContactRef.current;
@@ -270,10 +310,8 @@ const ChatWrapper = () => {
         setLoadingContacts(true);
         // FIX: Đảm bảo kiểm tra userRole trước khi gọi API chat
         if (maTK) {
-            axiosClient.get('/chat/contacts')
-            .then(res => {
-                setContacts(res.data.data || []);
-            })
+            fetchContacts({ force: false })
+            .then(() => {})
             .catch(err => console.error("Lỗi tải danh bạ:", err))
             .finally(() => setLoadingContacts(false));
         } else {

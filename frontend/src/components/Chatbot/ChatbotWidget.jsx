@@ -3,6 +3,9 @@ import { useLocation } from "react-router-dom";
 // SỬA LỖI IMPORT: Đảm bảo đường dẫn chính xác tới file service vừa tạo
 import { sendMessage, getHistory, uploadImage } from "../../services/chatbot/chatbotService.js";
 
+const CHATBOT_HISTORY_TTL_MS = 2 * 60 * 1000;
+const historyCache = new Map();
+
 // --- ICONS (SVG) ---
 const DoctorIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 text-teal-600 bg-white rounded-full p-1 shadow-sm">
@@ -84,6 +87,17 @@ const ChatbotWidget = () => {
     // Nếu đang ở trang login/register, KHÔNG tải lịch sử để tránh lỗi 401
     if (pageContext === 'register') return;
 
+    const cacheKey = pageContext;
+    const cached = historyCache.get(cacheKey);
+    const now = Date.now();
+    if (cached && now - cached.fetchedAt < CHATBOT_HISTORY_TTL_MS) {
+      setMessages((prev) => {
+        if (prev.length <= 1) return [...prev, ...cached.messages];
+        return cached.messages;
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await getHistory(); 
@@ -96,6 +110,7 @@ const ChatbotWidget = () => {
       ]).filter(msg => msg.text && !msg.text.includes("[User uploaded an image]"));
 
       if (historyMessages.length > 0) {
+        historyCache.set(cacheKey, { messages: historyMessages, fetchedAt: Date.now() });
         setMessages(prev => {
             if (prev.length <= 1) return [...prev, ...historyMessages];
             return historyMessages;
