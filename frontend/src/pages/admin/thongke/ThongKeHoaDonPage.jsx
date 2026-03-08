@@ -1,21 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import { thongKeHoaDon } from "../../../services/hoadon/thongkeService";
 import dayjs from "dayjs";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts";
 import { BarChart3, DollarSign, FileText, CheckCircle, XCircle, Calendar, Filter } from 'lucide-react';
 import toast from "react-hot-toast";
+
+const InvoiceStatusPieChart = lazy(() => import("./charts/InvoiceStatusPieChart"));
+const PaymentComparisonBarChart = lazy(() => import("./charts/PaymentComparisonBarChart"));
 
 const ThongKeHoaDonPage = () => {
   const [from, setFrom] = useState("");
@@ -183,25 +173,9 @@ const ThongKeHoaDonPage = () => {
                 <BarChart3 size={20} className="text-emerald-600" />
                 Tỷ lệ hóa đơn theo trạng thái
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<div className="h-[300px] animate-pulse rounded-lg bg-gray-100" />}>
+                <InvoiceStatusPieChart pieData={pieData} colors={COLORS} />
+              </Suspense>
             </div>
 
             {/* Bar Chart */}
@@ -210,15 +184,9 @@ const ThongKeHoaDonPage = () => {
                 <BarChart3 size={20} className="text-emerald-600" />
                 So sánh thanh toán
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={pieData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<div className="h-[300px] animate-pulse rounded-lg bg-gray-100" />}>
+                <PaymentComparisonBarChart data={pieData} />
+              </Suspense>
             </div>
           </div>
         </>
