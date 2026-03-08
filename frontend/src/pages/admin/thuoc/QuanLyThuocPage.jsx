@@ -13,7 +13,7 @@ import {
   getAllDonViTinh
 } from "../../../services/thuoc/donvitinhService";
 import toast from "react-hot-toast";
-import { Pill, Search, Edit, Trash2, X, Plus, Save, Package, DollarSign, Calendar } from 'lucide-react';
+import { Pill, Search, Edit, Trash2, X, Plus, Save, Package, DollarSign, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 
 const QuanLyThuocPage = () => {
@@ -23,6 +23,8 @@ const QuanLyThuocPage = () => {
   const [donViTinhList, setDonViTinhList] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   const fetchData = async () => {
     setLoading(true);
@@ -118,13 +120,34 @@ const QuanLyThuocPage = () => {
   };
 
   const filtered = useMemo(() => {
+    const searchTerm = search.toLowerCase();
     return thuocList.filter(
       (t) =>
-        t.tenThuoc?.toLowerCase().includes(search.toLowerCase()) ||
-        t.maThuoc?.toLowerCase().includes(search.toLowerCase()) ||
-        t.tenHoatChat?.toLowerCase().includes(search.toLowerCase())
+        t.tenThuoc?.toLowerCase().includes(searchTerm) ||
+        t.maThuoc?.toLowerCase().includes(searchTerm) ||
+        t.tenHoatChat?.toLowerCase().includes(searchTerm)
     );
   }, [thuocList, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedThuoc = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage]);
+
+  const fromItem = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const toItem = Math.min(currentPage * pageSize, filtered.length);
 
   if (loading) {
     return (
@@ -392,6 +415,12 @@ const QuanLyThuocPage = () => {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+          <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-sm text-gray-600 flex items-center justify-between">
+            <span>
+              Hiển thị <strong>{fromItem}-{toItem}</strong> trên <strong>{filtered.length}</strong> kết quả
+            </span>
+            <span>Trang {currentPage}/{totalPages}</span>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
@@ -407,7 +436,7 @@ const QuanLyThuocPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filtered.map(t => (
+                {paginatedThuoc.map(t => (
                   <tr key={t.maThuoc} className="hover:bg-red-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-800">
                       <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
@@ -461,6 +490,29 @@ const QuanLyThuocPage = () => {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                <ChevronLeft size={16} />
+                Trước
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Sau
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
