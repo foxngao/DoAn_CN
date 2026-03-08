@@ -63,12 +63,15 @@ describe("session cookie migration", () => {
   it("login flow does not require plaintext token in localStorage", async () => {
     postMock.mockResolvedValueOnce({
       data: {
-        token: "legacy-token",
-        user: {
-          maTK: "TK001",
-          maNhom: "BENHNHAN",
-          maBN: "BN001",
-          loaiNS: null,
+        success: true,
+        data: {
+          csrfToken: "csrf-token",
+          user: {
+            maTK: "TK001",
+            maNhom: "BENHNHAN",
+            maBN: "BN001",
+            loaiNS: null,
+          },
         },
       },
     });

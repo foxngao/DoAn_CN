@@ -11,14 +11,11 @@ function ManageLichKham() {
   const [dsBenhNhan, setDsBenhNhan] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
 
   const fetchLichKham = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`/lichkham`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(`/lichkham`);
       setLichList(Array.isArray(res.data.data) ? res.data.data : res.data);
     } catch (err) {
       toast.error("Không thể tải lịch khám");
@@ -30,8 +27,8 @@ function ManageLichKham() {
   const fetchOptions = async () => {
     try {
       const [bsRes, bnRes] = await Promise.all([
-        axios.get(`/bacsi`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`/benhnhan`, { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`/bacsi`),
+        axios.get(`/benhnhan`)
       ]);
       setDsBacSi(bsRes.data.data || []);
       setDsBenhNhan(bnRes.data.data || []);
@@ -54,14 +51,10 @@ function ManageLichKham() {
     if (!form) return;
     try {
       if (form.maLich) {
-        await axios.put(`/lichkham/${form.maLich}`, form, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.put(`/lichkham/${form.maLich}`, form);
         toast.success("Cập nhật lịch khám thành công");
       } else {
-        await axios.post(`/lichkham`, form, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.post(`/lichkham`, form);
         toast.success("Thêm lịch khám mới");
       }
       setForm(null);
@@ -79,9 +72,7 @@ function ManageLichKham() {
   const handleDelete = async (maLich) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa lịch khám này?")) return;
     try {
-      await axios.delete(`/lichkham/${maLich}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/lichkham/${maLich}`);
       toast.success("Đã xoá lịch khám");
       fetchLichKham();
     } catch {

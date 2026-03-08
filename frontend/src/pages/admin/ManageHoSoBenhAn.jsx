@@ -11,7 +11,6 @@ function ManageHoSoBenhAn() {
   const [form, setForm] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
   const isAdmin = localStorage.getItem("role") === "ADMIN";
 
   const getVNDateTimeLocal = () => {
@@ -24,8 +23,8 @@ function ManageHoSoBenhAn() {
     setLoading(true);
     try {
       const [res, bnRes] = await Promise.all([
-        axios.get("/hsba", { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get("/benhnhan", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get("/hsba"),
+        axios.get("/benhnhan"),
       ]);
 
       if (!res.data.success) throw new Error("API trả về lỗi");
@@ -51,9 +50,7 @@ function ManageHoSoBenhAn() {
     e.preventDefault();
     if (!form) return;
     try {
-      await axios.post("/hsba", form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post("/hsba", form);
       toast.success("Tạo hồ sơ thành công");
       setForm(null);
       fetchAll();
@@ -65,9 +62,7 @@ function ManageHoSoBenhAn() {
   const handleDelete = async (id) => {
     if (!window.confirm("Xác nhận xoá hồ sơ?")) return;
     try {
-      await axios.delete(`/hsba/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/hsba/${id}`);
       toast.success("Đã xoá hồ sơ");
       fetchAll();
     } catch {

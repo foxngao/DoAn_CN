@@ -6,6 +6,10 @@ yarn-debug.log*
 yarn-error.log*
 dist/
 .env
+.env.*
+backend/.env
+backend/.env.*
+.hive/
 
 # MacOS
 .DS_Store

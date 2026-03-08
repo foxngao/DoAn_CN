@@ -8,14 +8,11 @@ function ManageLoaiXN() {
   const [form, setForm] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/loaixetnghiem", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get("/loaixetnghiem");
       setList(res.data.data || res.data);
     } catch {
       toast.error("Lỗi khi tải danh sách loại xét nghiệm");
@@ -37,14 +34,10 @@ function ManageLoaiXN() {
     if (!form) return;
     try {
       if (form?.maLoaiXN) {
-        await axios.put(`/loaixetnghiem/${form.maLoaiXN}`, form, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.put(`/loaixetnghiem/${form.maLoaiXN}`, form);
         toast.success("Đã cập nhật loại xét nghiệm");
       } else {
-        await axios.post(`/loaixetnghiem`, form, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.post(`/loaixetnghiem`, form);
         toast.success("Đã thêm loại xét nghiệm");
       }
       setForm(null);
@@ -60,9 +53,7 @@ function ManageLoaiXN() {
   const handleDelete = async (id) => {
     if (!window.confirm("Xoá loại xét nghiệm này?")) return;
     try {
-      await axios.delete(`/loaixetnghiem/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/loaixetnghiem/${id}`);
       toast.success("Đã xoá loại xét nghiệm");
       fetchAll();
     } catch {

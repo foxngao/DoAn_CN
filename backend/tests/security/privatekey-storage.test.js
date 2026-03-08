@@ -3,6 +3,9 @@ const assert = require("node:assert/strict");
 
 process.env.PRIVATE_KEY_ENCRYPTION_KEY =
   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+process.env.DATA_ENCRYPTION_KEY =
+  process.env.DATA_ENCRYPTION_KEY || "test-data-encryption-key";
+process.env.HASH_PEPPER = process.env.HASH_PEPPER || "test-hash-pepper";
 
 const TaiKhoan = require("../../src/models/TaiKhoan");
 const blockchainService = require("../../src/services/blockchain.service");

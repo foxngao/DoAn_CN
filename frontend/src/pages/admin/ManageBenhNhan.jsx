@@ -9,14 +9,11 @@ function ManageBenhNhan() {
   const [form, setForm] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
 
   const fetchBenhNhan = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`/benhnhan`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(`/benhnhan`);
       setDsBenhNhan(Array.isArray(res.data.data) ? res.data.data : res.data);
     } catch (err) {
       toast.error("Lỗi khi tải danh sách bệnh nhân");
@@ -37,9 +34,7 @@ function ManageBenhNhan() {
   const handleDelete = async (maBN) => {
     if (!window.confirm("Xác nhận xóa bệnh nhân này?")) return;
     try {
-      await axios.delete(`/benhnhan/${maBN}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/benhnhan/${maBN}`);
       toast.success("Đã xóa bệnh nhân");
       fetchBenhNhan();
     } catch (err) {
@@ -55,9 +50,7 @@ function ManageBenhNhan() {
     e.preventDefault();
     if (!form) return;
     try {
-      await axios.put(`/benhnhan/${form.maBN}`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(`/benhnhan/${form.maBN}`, form);
       toast.success("Cập nhật bệnh nhân thành công");
       setForm(null);
       fetchBenhNhan();

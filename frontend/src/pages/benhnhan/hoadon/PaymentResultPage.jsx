@@ -7,6 +7,24 @@ const PaymentResultPage = () => {
   const [status, setStatus] = useState(null); // 'success' | 'fail'
   const [message, setMessage] = useState("Đang xử lý kết quả...");
 
+  const hasSession = () => Boolean(localStorage.getItem("role"));
+
+  const navigateToInvoiceOrLogin = (maHD = "") => {
+    if (hasSession()) {
+      navigate(`/patient/hoadon?reload=true${maHD ? `&maHD=${maHD}` : ""}`);
+      return;
+    }
+    navigate("/login");
+  };
+
+  const navigateToPatientHomeOrLogin = () => {
+    if (hasSession()) {
+      navigate("/patient");
+      return;
+    }
+    navigate("/login");
+  };
+
   useEffect(() => {
     checkPaymentStatus();
   }, []);
@@ -21,12 +39,7 @@ const PaymentResultPage = () => {
         setMessage(maHD ? `Giao dịch thanh toán thành công! Mã hóa đơn: ${maHD}` : "Giao dịch thanh toán thành công!");
         // Tự động redirect sau 3 giây nếu thành công
         setTimeout(() => {
-          const token = localStorage.getItem("token");
-          if (token) {
-            navigate(`/patient/hoadon?reload=true&maHD=${maHD || ''}`);
-          } else {
-            navigate("/login");
-          }
+          navigateToInvoiceOrLogin(maHD || "");
         }, 3000);
       } else {
         setStatus("fail");
@@ -44,12 +57,7 @@ const PaymentResultPage = () => {
         setMessage("Giao dịch VNPAY thành công!");
         // Tự động redirect sau 3 giây
         setTimeout(() => {
-          const token = localStorage.getItem("token");
-          if (token) {
-            navigate("/patient/hoadon?reload=true");
-          } else {
-            navigate("/login");
-          }
+          navigateToInvoiceOrLogin();
         }, 3000);
       } else {
         setStatus("fail");
@@ -66,12 +74,7 @@ const PaymentResultPage = () => {
         setMessage("Giao dịch MoMo thành công!");
         // Tự động redirect sau 3 giây
         setTimeout(() => {
-          const token = localStorage.getItem("token");
-          if (token) {
-            navigate("/patient/hoadon?reload=true");
-          } else {
-            navigate("/login");
-          }
+          navigateToInvoiceOrLogin();
         }, 3000);
       } else {
         setStatus("fail");
@@ -117,13 +120,7 @@ const PaymentResultPage = () => {
           <button
             onClick={() => {
               const maHD = searchParams.get("maHD");
-              const token = localStorage.getItem("token");
-              // Nếu có token, redirect về trang hóa đơn, nếu không thì về trang chủ
-              if (token) {
-                navigate(`/patient/hoadon?reload=true${maHD ? `&maHD=${maHD}` : ''}`);
-              } else {
-                navigate("/login");
-              }
+              navigateToInvoiceOrLogin(maHD || "");
             }}
             className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
           >
@@ -131,12 +128,7 @@ const PaymentResultPage = () => {
           </button>
           <button
             onClick={() => {
-              const token = localStorage.getItem("token");
-              if (token) {
-                navigate("/patient");
-              } else {
-                navigate("/login");
-              }
+              navigateToPatientHomeOrLogin();
             }}
             className="w-full py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
           >

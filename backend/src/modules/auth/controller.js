@@ -8,6 +8,7 @@ const nodemailer = require("nodemailer");
 const otpService = require("../../OTP/otp.service");
 const blockchainService = require("../../services/blockchain.service");
 const { ok, fail } = require("../../utils/apiResponse");
+const env = require("../../config/env");
 
 const SESSION_COOKIE_NAME = "session_token";
 const CSRF_COOKIE_NAME = "csrf_token";
@@ -207,7 +208,7 @@ exports.login = async (req, res) => {
     // ... (logic tạo token, lấy thông tin user)
     const token = jwt.sign(
         { maTK: user.maTK, tenDangNhap: user.tenDangNhap, maNhom: user.maNhom },
-        process.env.JWT_SECRET || "secret123",
+        env.JWT_SECRET,
         { expiresIn: "1d" }
     );
     const nhomQuyen = await NhomQuyen.findOne({ where: { maNhom: user.maNhom } });
@@ -236,7 +237,6 @@ exports.login = async (req, res) => {
       data: {
         ...authPayload,
         csrfToken,
-        token,
       },
       status: 200,
     });
@@ -289,7 +289,7 @@ exports.googleLogin = async (req, res) => {
 
     const token = jwt.sign(
       { maTK: user.maTK, email: user.email, maNhom: user.maNhom },
-      process.env.JWT_SECRET || "secret123",
+      env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -301,7 +301,6 @@ exports.googleLogin = async (req, res) => {
       message: "Đăng nhập Google thành công",
       data: {
         csrfToken,
-        token,
         user: {
           maTK: user.maTK,
           tenDangNhap: user.tenDangNhap,

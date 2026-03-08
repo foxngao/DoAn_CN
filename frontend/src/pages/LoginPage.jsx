@@ -13,6 +13,9 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const getUserFromAuthResponse = (response) =>
+    response?.data?.data?.user || response?.data?.user || null;
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -20,8 +23,9 @@ function LoginPage() {
     try {
       const res = await axios.post("/auth/login", { tenDangNhap, matKhau });
 
-      if (res.data && res.data.user) {
-        const { user } = res.data;
+      const user = getUserFromAuthResponse(res);
+
+      if (user) {
         localStorage.removeItem("token");
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("maTK", user.maTK);

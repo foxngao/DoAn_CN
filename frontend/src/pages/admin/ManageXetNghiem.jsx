@@ -9,14 +9,12 @@ function ManageXetNghiem() {
   const [form, setForm] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
-
   const fetchAll = async () => {
     setLoading(true);
     try {
       const [xnRes, loaiRes] = await Promise.all([
-        axios.get("/xetnghiem", { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get("/loaixetnghiem", { headers: { Authorization: `Bearer ${token}` } })
+        axios.get("/xetnghiem"),
+        axios.get("/loaixetnghiem")
       ]);
       setList(Array.isArray(xnRes.data.data) ? xnRes.data.data : xnRes.data);
       setDsLoai(loaiRes.data.data || []);
@@ -40,14 +38,10 @@ function ManageXetNghiem() {
     if (!form) return;
     try {
       if (form?.maXN) {
-        await axios.put(`/xetnghiem/${form.maXN}`, form, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.put(`/xetnghiem/${form.maXN}`, form);
         toast.success("Đã cập nhật xét nghiệm");
       } else {
-        await axios.post("/xetnghiem", form, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.post("/xetnghiem", form);
         toast.success("Đã thêm xét nghiệm");
       }
       setForm(null);
@@ -63,9 +57,7 @@ function ManageXetNghiem() {
   const handleDelete = async (id) => {
     if (!window.confirm("Xác nhận xoá xét nghiệm này?")) return;
     try {
-      await axios.delete(`/xetnghiem/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`/xetnghiem/${id}`);
       toast.success("Đã xoá");
       fetchAll();
     } catch {

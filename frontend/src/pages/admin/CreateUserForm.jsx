@@ -36,14 +36,10 @@ function CreateUserForm() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const token = localStorage.getItem("token");
-
   // Tải danh sách Khoa
   const fetchKhoa = async () => {
     try {
-      const res = await axios.get("/khoa", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get("/khoa");
       // Xử lý an toàn cho dữ liệu trả về
       const data = res.data.data || res.data;
       setDsKhoa(Array.isArray(data) ? data : []);
@@ -60,7 +56,7 @@ function CreateUserForm() {
         fillForm(userFromState);
       } else {
         axios
-          .get(`/tai-khoan/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+          .get(`/tai-khoan/${id}`)
           .then((res) => fillForm(res.data))
           .catch(() => toast.error("Không tải được thông tin tài khoản"));
       }
@@ -173,10 +169,10 @@ function CreateUserForm() {
 
     try {
       if (isEdit) {
-        await axios.put(`/tai-khoan/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.put(`/tai-khoan/${id}`, payload);
         toast.success("Cập nhật tài khoản thành công");
       } else {
-        await axios.post("/tai-khoan", payload, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post("/tai-khoan", payload);
         toast.success("Tạo tài khoản thành công");
       }
       // Chuyển hướng về danh sách sau khi thành công

@@ -9,6 +9,9 @@ import { jwtDecode } from "jwt-decode";
 function RegisterPage() {
   const navigate = useNavigate();
 
+  const getUserFromAuthResponse = (response) =>
+    response?.data?.data?.user || response?.data?.user || null;
+
   // === STATE DỮ LIỆU ===
   const [tenDangNhap, setTenDangNhap] = useState("");
   const [matKhau, setMatKhau] = useState("");
@@ -172,9 +175,9 @@ function RegisterPage() {
         matKhau: decoded.sub, 
       });
 
-      if (res.data && res.data.user) {
+      const user = getUserFromAuthResponse(res);
+      if (user) {
         toast.success("✅ Đăng nhập bằng Google thành công!");
-        const { user } = res.data;
         localStorage.removeItem("token");
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("maTK", user.maTK);

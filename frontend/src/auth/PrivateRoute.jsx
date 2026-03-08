@@ -1,12 +1,11 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 const PrivateRoute = () => {
-  const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");      // maNhom: ADMIN, BACSI, BENHNHAN, NHANSU
   const loaiNS = localStorage.getItem("loaiNS");  // chỉ với NHANSU
   const location = useLocation();
 
-  if (!token) return <Navigate to="/login" />;
+  if (!role) return <Navigate to="/login" />;
 
   const path = location.pathname;
 

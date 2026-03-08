@@ -5,6 +5,9 @@ process.env.DB_HOST = process.env.DB_HOST || "localhost";
 process.env.DB_USER = process.env.DB_USER || "test-user";
 process.env.DB_PASSWORD = process.env.DB_PASSWORD || "test-password";
 process.env.DB_NAME = process.env.DB_NAME || "test-db";
+process.env.DATA_ENCRYPTION_KEY =
+  process.env.DATA_ENCRYPTION_KEY || "test-data-encryption-key";
+process.env.HASH_PEPPER = process.env.HASH_PEPPER || "test-hash-pepper";
 
 const db = require("../../src/models");
 const blockchainService = require("../../src/services/blockchain.service");

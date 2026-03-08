@@ -5,13 +5,10 @@ import toast from "react-hot-toast";
 function AssignRole() {
   const [users, setUsers] = useState([]);
   const [updatedRoles, setUpdatedRoles] = useState({});
-  const token = localStorage.getItem("token");
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("/tai-khoan", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get("/tai-khoan");
       setUsers(res.data.data || []); // ✅ Đảm bảo là array
     } catch (err) {
       toast.error("Không thể tải danh sách tài khoản");
@@ -29,9 +26,7 @@ function AssignRole() {
   const handleSave = async (id) => {
     const maNhom = updatedRoles[id];
     try {
-      await axios.put(`/tai-khoan/${id}`, { maNhom }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(`/tai-khoan/${id}`, { maNhom });
       toast.success("Cập nhật quyền thành công");
       fetchUsers();
     } catch (err) {

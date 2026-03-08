@@ -2,6 +2,15 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
 
+process.env.DB_HOST = process.env.DB_HOST || "localhost";
+process.env.DB_USER = process.env.DB_USER || "test-user";
+process.env.DB_PASSWORD = process.env.DB_PASSWORD || "test-password";
+process.env.DB_NAME = process.env.DB_NAME || "test-db";
+process.env.JWT_SECRET = process.env.JWT_SECRET || "test-secret";
+process.env.DATA_ENCRYPTION_KEY =
+  process.env.DATA_ENCRYPTION_KEY || "test-data-encryption-key";
+process.env.HASH_PEPPER = process.env.HASH_PEPPER || "test-hash-pepper";
+
 const app = require("../../src/app");
 
 test("GET /api/health returns service health payload", async () => {

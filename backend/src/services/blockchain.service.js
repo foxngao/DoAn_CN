@@ -5,7 +5,17 @@ const {
   resolvePrivateKey,
   encryptPrivateKey,
 } = require('../utils/crypto');
-const DATA_ENCRYPTION_KEY = process.env.DATA_ENCRYPTION_KEY || 'default_secret_key';
+
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value || String(value).trim() === "") {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return String(value).trim();
+}
+
+const DATA_ENCRYPTION_KEY = requireEnv("DATA_ENCRYPTION_KEY");
+const HASH_PEPPER = requireEnv("HASH_PEPPER");
 
 /**
  * Mã hóa dữ liệu (string) bằng AES
@@ -36,9 +46,6 @@ function decryptData(encryptedData) {
  * @returns {string} - Hash HMAC-SHA-256
  */
 function createHash(timestampString, data_json, previousHash, signature, maNguoiTao) {
-  // Lấy HASH_PEPPER từ .env, không hardcode
-  const HASH_PEPPER = process.env.HASH_PEPPER || "thay-the-bang-mot-chuoi-bi-mat-dai-trong-env";
-  
   const dataString = `${timestampString}${data_json}${previousHash}${signature}${maNguoiTao}`;
   
   return crypto.createHmac('sha256', HASH_PEPPER)

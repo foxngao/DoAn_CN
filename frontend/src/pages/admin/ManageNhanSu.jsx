@@ -9,7 +9,6 @@ function ManageNhanSu() {
   const [form, setForm] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     fetchNhanSu();
@@ -19,9 +18,7 @@ function ManageNhanSu() {
   const fetchNhanSu = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/nhansu", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get("/nhansu");
       setDsNhanSu(res.data.data || []);
     } catch {
       toast.error("Không thể tải danh sách nhân sự");
@@ -32,9 +29,7 @@ function ManageNhanSu() {
 
   const fetchKhoa = async () => {
     try {
-      const res = await axios.get("/khoa", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get("/khoa");
       setDsKhoa(res.data.data || []);
     } catch {
       toast.error("Không thể tải danh sách khoa");
@@ -46,9 +41,7 @@ function ManageNhanSu() {
   const handleDelete = async (maNS) => {
     if (!window.confirm("Xác nhận xoá nhân sự này?")) return;
     try {
-      await axios.delete(`/nhansu/${maNS}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/nhansu/${maNS}`);
       toast.success("Đã xoá nhân sự");
       fetchNhanSu();
     } catch {
@@ -64,9 +57,7 @@ function ManageNhanSu() {
     e.preventDefault();
     if (!form) return;
     try {
-      await axios.put(`/nhansu/${form.maNS}`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(`/nhansu/${form.maNS}`, form);
       toast.success("Cập nhật thành công");
       setForm(null);
       fetchNhanSu();

@@ -9,14 +9,11 @@ function AdminUserList() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("ALL");
-  const token = localStorage.getItem("token");
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/tai-khoan", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get("/tai-khoan");
       setUsers(Array.isArray(res.data) ? res.data : res.data.data || []);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -27,7 +24,8 @@ function AdminUserList() {
   };
 
   useEffect(() => {
-    if (!token) {
+    const role = localStorage.getItem("role");
+    if (!role) {
       toast.error("Bạn chưa đăng nhập");
       return;
     }
@@ -37,9 +35,7 @@ function AdminUserList() {
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) return;
     try {
-      await axios.delete(`/tai-khoan/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/tai-khoan/${id}`);
       toast.success("Đã xóa tài khoản");
       fetchUsers();
     } catch (err) {

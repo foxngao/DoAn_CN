@@ -10,14 +10,11 @@ function ManageBacSi() {
   const [form, setForm] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
 
   const fetchBacSi = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`/bacsi`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(`/bacsi`);
       setDsBacSi(Array.isArray(res.data.data) ? res.data.data : []);
     } catch (err) {
       toast.error("Lỗi khi tải danh sách bác sĩ");
@@ -28,9 +25,7 @@ function ManageBacSi() {
 
   const fetchKhoa = async () => {
     try {
-      const res = await axios.get(`/khoa`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(`/khoa`);
       setDsKhoa(Array.isArray(res.data.data) ? res.data.data : res.data);
     } catch (err) {
       toast.error("Lỗi khi tải danh sách khoa");
@@ -49,9 +44,7 @@ function ManageBacSi() {
   const handleDelete = async (maBS) => {
     if (!window.confirm("Xác nhận xóa bác sĩ?")) return;
     try {
-      await axios.delete(`/bacsi/${maBS}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/bacsi/${maBS}`);
       toast.success("Đã xóa bác sĩ");
       fetchBacSi();
     } catch (err) {
@@ -67,9 +60,7 @@ function ManageBacSi() {
     e.preventDefault();
     if (!form) return;
     try {
-      await axios.put(`/bacsi/${form.maBS}`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(`/bacsi/${form.maBS}`, form);
       toast.success("Cập nhật bác sĩ thành công");
       setForm(null);
       fetchBacSi();

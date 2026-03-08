@@ -11,7 +11,6 @@ const TroLyBacSiPage = () => {
   const [form, setForm] = useState({});
   const [isEdit, setIsEdit] = useState(false);
 
-  const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = user?.maNhom === "ADMIN";
 
