@@ -60,6 +60,7 @@ const BackIcon = () => (
  */
 const ChatWrapper = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isRealtimeActivated, setIsRealtimeActivated] = useState(false);
   const [contacts, setContacts] = useState([]); // Toàn bộ danh bạ
   const [loadingContacts, setLoadingContacts] = useState(false);
   
@@ -132,6 +133,13 @@ const ChatWrapper = () => {
   useEffect(() => { selectedContactRef.current = selectedContact; }, [selectedContact]);
   useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
   useEffect(() => { currentViewRef.current = currentView; }, [currentView]);
+
+  // Chỉ kích hoạt realtime khi người dùng mở chat ít nhất 1 lần
+  useEffect(() => {
+    if (isOpen && !isRealtimeActivated) {
+      setIsRealtimeActivated(true);
+    }
+  }, [isOpen, isRealtimeActivated]);
   
   // ✅ Đảm bảo khi selectedContact thay đổi, currentView được set thành 'chat'
   useEffect(() => {
@@ -152,15 +160,15 @@ const ChatWrapper = () => {
   }, [selectedContact?.maTK, currentView]);
 
   useEffect(() => {
-    if (!maTK) return;
+    if (!maTK || !isRealtimeActivated) return;
     connectSocket();
     return () => {
       disconnectSocket();
     };
-  }, [maTK]);
+  }, [maTK, isRealtimeActivated]);
 
   useEffect(() => {
-    if (!maTK) return;
+    if (!maTK || !isRealtimeActivated) return;
 
     const handleNewMessageNotification = (notification) => {
       const { senderId, tenDangNhap } = notification;
@@ -268,7 +276,7 @@ const ChatWrapper = () => {
       offChatRejected(handleChatRejected);
       offChatExpired(handleChatExpired);
     };
-  }, [maTK]);
+  }, [maTK, isRealtimeActivated]);
 
   // Load danh bạ (contacts) khi cửa sổ được mở HOẶC khi view thay đổi (để cập nhật danh bạ sau khi chấp nhận)
   useEffect(() => {
@@ -496,6 +504,9 @@ const ChatWrapper = () => {
       {/* Nút Bong Bóng Chat */}
       <button
         onClick={() => {
+          if (!isOpen && !isRealtimeActivated) {
+            setIsRealtimeActivated(true);
+          }
           setIsOpen(prev => !prev);
           // ✅ Reset số đếm tin nhắn chưa đọc khi mở cửa sổ chat
           if (!isOpen) {
