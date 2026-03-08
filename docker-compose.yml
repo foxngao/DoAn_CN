@@ -4,8 +4,8 @@ services:
     image: mysql:8.0
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-Hospital5}
     ports:
       - "3306:3306"
     volumes:
@@ -28,16 +28,19 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_PORT=${DB_PORT}
-      - PORT=${PORT}
-      - JWT_SECRET=${JWT_SECRET}
-      - CHATBOT_API_URL=${CHATBOT_API_URL}
-      - CHATBOT_API_KEY=${CHATBOT_API_KEY}
-      - CHATBOT_MODEL=${CHATBOT_MODEL}
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_USER=${DB_USER:-hospital_app}
+      - DB_PASSWORD=${DB_PASSWORD:-MatKhauBaoMatHon123456}
+      - DB_NAME=${DB_NAME:-Hospital5}
+      - DB_PORT=${DB_PORT:-3306}
+      - PORT=${PORT:-4000}
+      - JWT_SECRET=${JWT_SECRET:-secretkey}
+      - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY:-DungMotChuoiBiMatVaDaiHon256BitODay_ThieuBaoMat}
+      - HASH_PEPPER=${HASH_PEPPER:-ThemMotChuoiPepperBiMatChoHash}
+      - PRIVATE_KEY_ENCRYPTION_KEY=${PRIVATE_KEY_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      - CHATBOT_API_URL=${CHATBOT_API_URL:-https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent}
+      - CHATBOT_API_KEY=${CHATBOT_API_KEY:-your_chatbot_api_key}
+      - CHATBOT_MODEL=${CHATBOT_MODEL:-gemini-2.5-flash-preview-09-2025}
     command: ["npm", "run", "dev"]
     networks:
       - hospital-network
