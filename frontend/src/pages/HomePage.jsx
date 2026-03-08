@@ -51,7 +51,18 @@ const ServiceCard = ({ icon: Icon, title, desc, onActivate }) => {
 const DoctorCard = ({ img, name, specialty }) => (
   <div className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all group">
     <div className="relative overflow-hidden h-64 bg-gray-100">
-      <img src={img} alt={name} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.target.src = 'https://via.placeholder.com/400x400?text=Doctor'; }} />
+      <img
+        src={img}
+        alt={name}
+        loading="lazy"
+        decoding="async"
+        width="400"
+        height="400"
+        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+        onError={(e) => {
+          e.target.src = 'https://via.placeholder.com/400x400?text=Doctor';
+        }}
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
         <Link to="/login" className="bg-white text-primary-700 px-4 py-2 rounded-full font-semibold text-sm hover:bg-primary-50 transition-colors">
           Đặt lịch ngay
@@ -71,7 +82,18 @@ const DoctorCard = ({ img, name, specialty }) => (
 const NewsCard = ({ img, title, date, desc }) => (
   <Link to="/patient/tintuc" className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group cursor-pointer block">
     <div className="h-48 overflow-hidden">
-      <img src={img} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=News'; }} />
+      <img
+        src={img}
+        alt={title}
+        loading="lazy"
+        decoding="async"
+        width="400"
+        height="300"
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        onError={(e) => {
+          e.target.src = 'https://via.placeholder.com/400x300?text=News';
+        }}
+      />
     </div>
     <div className="p-5">
       <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
@@ -321,6 +343,10 @@ const HomePage = () => {
               <img 
                 src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2653&auto=format&fit=crop" 
                 alt="About SmartHospital" 
+                loading="lazy"
+                decoding="async"
+                width="600"
+                height="500"
                 className="relative rounded-3xl shadow-2xl w-full h-[500px] object-cover"
                 onError={(e) => { e.target.src = 'https://via.placeholder.com/600x500?text=About+Us'; }}
               />
