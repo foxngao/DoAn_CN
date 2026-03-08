@@ -112,7 +112,9 @@ const isUserInRoom = async (roomName, userId) => {
   return !!room;
 };
 
-const getContacts = async (user) => {
+const getContacts = async (user, options = {}) => {
+    const page = Math.max(1, Number.parseInt(options.page, 10) || 1);
+    const limit = Math.min(200, Math.max(1, Number.parseInt(options.limit, 10) || 50));
     const { maTK, maNhom, loaiNS } = user;
     let contacts = [];
 
@@ -202,14 +204,40 @@ const getContacts = async (user) => {
 
     // Lọc trùng lặp và loại bỏ chính mình
     const uniqueContacts = Array.from(new Map(contacts.map(c => [c.maTK, c])).values());
-    return uniqueContacts.filter(c => c && c.maTK !== user.maTK);
+    const filtered = uniqueContacts.filter(c => c && c.maTK !== user.maTK);
+    const total = filtered.length;
+    const offset = (page - 1) * limit;
+    const data = filtered.slice(offset, offset + limit);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
 };
 
 /**
  * Lấy danh sách các phòng chat của user (các cuộc hội thoại đã có)
  */
-const getUserRooms = async (userId) => {
+const getUserRooms = async (userId, options = {}) => {
     try {
+        const page = Math.max(1, Number.parseInt(options.page, 10) || 1);
+        const limit = Math.min(100, Math.max(1, Number.parseInt(options.limit, 10) || 20));
+        const offset = (page - 1) * limit;
+
+        const total = await ChatRooms.count({
+            where: {
+                [Op.or]: [
+                    { user1Id: userId },
+                    { user2Id: userId }
+                ]
+            }
+        });
+
         const rooms = await ChatRooms.findAll({
             where: {
                 [Op.or]: [
@@ -229,11 +257,13 @@ const getUserRooms = async (userId) => {
                     attributes: ['maTK', 'tenDangNhap', 'maNhom']
                 }
             ],
-            order: [['updatedAt', 'DESC']]
+            order: [['updatedAt', 'DESC']],
+            limit,
+            offset
         });
 
         // Chuyển đổi để trả về thông tin đối tác (partner) cho mỗi phòng
-        return rooms.map(room => {
+        const data = rooms.map(room => {
             const partner = room.user1Id === userId ? room.User2 : room.User1;
             return {
                 roomName: room.roomName,
@@ -245,9 +275,27 @@ const getUserRooms = async (userId) => {
                 updatedAt: room.updatedAt
             };
         });
+
+        return {
+            data,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
     } catch (error) {
         console.error("Lỗi lấy danh sách phòng chat:", error);
-        return [];
+        return {
+          data: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0
+          }
+        };
     }
 };
 

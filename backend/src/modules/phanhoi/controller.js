@@ -52,19 +52,34 @@ exports.getByBenhNhan = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const { trangThai, loai } = req.query;
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
     const where = {};
     if (trangThai) where.trangThai = trangThai;
     if (loai) where.loai = loai;
 
-    const data = await PhanHoi.findAll({
+    const { count, rows } = await PhanHoi.findAndCountAll({
       where,
       include: [
         { model: BenhNhan, attributes: ["hoTen", "soDienThoai", "email"] },
         { model: NhanSuYTe, attributes: ["hoTen"], as: "NhanSuYTe", required: false }
       ],
-      order: [["ngayGui", "DESC"]]
+      order: [["ngayGui", "DESC"]],
+      limit,
+      offset,
+      distinct: true
     });
-    res.json({ success: true, data });
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
   } catch (err) {
     console.error("❌ Lỗi:", err);
     res.status(500).json({ success: false, message: "Lỗi lấy danh sách phản hồi", error: err.message });

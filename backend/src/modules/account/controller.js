@@ -272,7 +272,11 @@ exports.remove = async (req, res) => {
 exports.getAll = async (req, res) => {
 
   try {
-    const danhSach = await TaiKhoan.findAll({
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await TaiKhoan.findAndCountAll({
       include: [
         {
           model: BacSi,
@@ -289,10 +293,13 @@ exports.getAll = async (req, res) => {
           attributes: ["maBN", "hoTen", "gioiTinh", "ngaySinh", "soDienThoai", "bhyt", "diaChi"]
         }
       ],
-      order: [["tenDangNhap", "ASC"]]
+      order: [["tenDangNhap", "ASC"]],
+      limit,
+      offset,
+      distinct: true
     });
 
-    const ketQua = danhSach.map((tk) => ({
+    const ketQua = rows.map((tk) => ({
       maTK: tk.maTK,
       tenDangNhap: tk.tenDangNhap,
       email: tk.email,
@@ -317,7 +324,13 @@ exports.getAll = async (req, res) => {
 
     res.json({
       message: "Lấy danh sách tài khoản thành công",
-      data: ketQua
+      data: ketQua,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      }
     });
   } catch (error) {
     console.error("❌ Lỗi chính trong TaiKhoan.findAll:", error.message);

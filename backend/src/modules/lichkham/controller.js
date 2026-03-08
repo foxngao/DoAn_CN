@@ -7,13 +7,30 @@ const { ok, fail } = require("../../utils/apiResponse");
 //  Lấy toàn bộ lịch khám
 exports.getAll = async (req, res) => {
   try {
-    const data = await LichKham.findAll({
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await LichKham.findAndCountAll({
       include: [
         { model: BacSi, attributes: ["hoTen"] },
         { model: BenhNhan, attributes: ["hoTen"] }
-      ]
+      ],
+      limit,
+      offset,
+      distinct: true
     });
-    return ok(res, { message: "Lấy danh sách lịch khám", data, status: 200 });
+    return ok(res, {
+      message: "Lấy danh sách lịch khám",
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      },
+      status: 200
+    });
   } catch (err) {
     return fail(res, { message: "Lỗi lấy lịch khám", errors: err.message, status: 500 });
   }
@@ -316,15 +333,32 @@ exports.create = async (req, res) => {
 // EXPORT CÁC HÀM CÒN THIẾU
 exports.getByMaBN = async (req, res) => {
   try {
-    const data = await LichKham.findAll({
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await LichKham.findAndCountAll({
       where: { maBN: req.params.maBN },
       include: [
         { model: BacSi, attributes: ["hoTen"] },
         { model: BenhNhan, attributes: ["hoTen"] }
       ],
-      order: [["thoiGianTao", "DESC"]] // Sắp xếp theo thời gian tạo mới nhất
+      order: [["thoiGianTao", "DESC"]], // Sắp xếp theo thời gian tạo mới nhất
+      limit,
+      offset,
+      distinct: true
     });
-    return ok(res, { message: "Lấy lịch theo bệnh nhân thành công", data, status: 200 });
+    return ok(res, {
+      message: "Lấy lịch theo bệnh nhân thành công",
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      },
+      status: 200
+    });
   } catch (err) {
     return fail(res, { message: "Lỗi lấy lịch theo maBN", errors: err.message, status: 500 });
   }
@@ -378,20 +412,36 @@ exports.checkTrungLich = async (req, res) => {
 exports.getByMaBS = async (req, res) => {
   try {
     const maBS = req.params.maBS; 
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
     
     if (!maBS) {
        return fail(res, { message: "❌ Thiếu mã bác sĩ (maBS) trong tham số URL.", status: 422 });
     }
 
-    const data = await LichKham.findAll({
+    const { count, rows } = await LichKham.findAndCountAll({
       where: { maBS: maBS }, // Lọc theo maBS từ URL
       include: [
         { model: BacSi, attributes: ["hoTen"] },
         { model: BenhNhan, attributes: ["hoTen"] }
       ],
-      order: [["ngayKham", "DESC"]] // Sắp xếp theo ngày mới nhất
+      order: [["ngayKham", "DESC"]], // Sắp xếp theo ngày mới nhất
+      limit,
+      offset,
+      distinct: true
     });
-    return ok(res, { message: "Lấy lịch hẹn theo bác sĩ thành công", data, status: 200 });
+    return ok(res, {
+      message: "Lấy lịch hẹn theo bác sĩ thành công",
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      },
+      status: 200
+    });
   } catch (err) {
     return fail(res, { message: "Lỗi lấy lịch hẹn theo bác sĩ", errors: err.message, status: 500 });
   }

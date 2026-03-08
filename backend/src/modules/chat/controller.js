@@ -7,10 +7,19 @@ const { ok, fail } = require("../../utils/apiResponse");
 exports.getUserRooms = async (req, res) => {
   try {
     const userId = req.user.maTK;
-    const rooms = await chatService.getUserRooms(userId);
+    const result = await chatService.getUserRooms(userId, {
+      page: req.query?.page,
+      limit: req.query?.limit,
+    });
+
+    const isLegacyShape = Array.isArray(result);
+    const rooms = isLegacyShape ? result : result?.data || [];
+    const pagination = isLegacyShape ? null : result?.pagination || null;
+
     return ok(res, {
       message: "Lấy danh sách phòng chat thành công",
       data: rooms,
+      pagination,
       status: 200,
     });
   } catch (error) {
@@ -57,10 +66,19 @@ exports.getRoomMessages = async (req, res) => {
 exports.getContacts = async (req, res) => {
     try {
         // req.user được gán từ middleware verifyToken
-        const contacts = await chatService.getContacts(req.user);
+        const result = await chatService.getContacts(req.user, {
+          page: req.query?.page,
+          limit: req.query?.limit,
+        });
+
+        const isLegacyShape = Array.isArray(result);
+        const contacts = isLegacyShape ? result : result?.data || [];
+        const pagination = isLegacyShape ? null : result?.pagination || null;
+
         return ok(res, {
           message: "Lấy danh sách liên hệ thành công",
           data: contacts,
+          pagination,
           status: 200,
         });
     } catch (error) {
