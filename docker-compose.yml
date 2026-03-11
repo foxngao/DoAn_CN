@@ -11,6 +11,12 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./mysql-initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     networks:
       - hospital-network
 
@@ -21,7 +27,8 @@ services:
     ports:
       - "4000:4000"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     working_dir: /app
     volumes:
       - ./backend:/app
@@ -44,6 +51,12 @@ services:
       - CHATBOT_API_KEY=${CHATBOT_API_KEY:-your_chatbot_api_key}
       - CHATBOT_MODEL=${CHATBOT_MODEL:-gemini-2.5-flash-preview-09-2025}
     command: ["npm", "run", "dev"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http=require('http');const req=http.request({host:'127.0.0.1',port:4000,path:'/api/health',method:'GET',timeout:2000},(res)=>process.exit(res.statusCode===200?0:1));req.on('error',()=>process.exit(1));req.on('timeout',()=>{req.destroy();process.exit(1);});req.end();"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - hospital-network
   
@@ -57,7 +70,10 @@ services:
     environment:
       ADMINER_DEFAULT_SERVER: mysql
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - hospital-network
 
