@@ -67,10 +67,11 @@ io.on("connection", (socket) => {
 
     try {
       // ✅ Kiểm tra xem có cần chấp nhận không (chỉ bệnh nhân chat với admin/y tá)
-      const senderUser = await TaiKhoan.findByPk(senderId);
-      const receiverUser = await TaiKhoan.findByPk(receiverId);
+      const receiverUser = await TaiKhoan.findByPk(receiverId, {
+        attributes: ["maTK", "maNhom"],
+      });
       
-      if (!senderUser || !receiverUser) {
+      if (!receiverUser) {
         return socket.emit("chatError", { message: "Không tìm thấy thông tin người dùng." });
       }
 
@@ -87,7 +88,7 @@ io.on("connection", (socket) => {
 
       // ✅ CHỈ BỆNH NHÂN mới có thể gửi yêu cầu chat tới admin/y tá (cần chấp nhận)
       // Admin/y tá chat với bệnh nhân sẽ tự động tạo phòng (không cần chấp nhận)
-      const isSenderBenhNhan = senderUser.maNhom === 'BENHNHAN';
+      const isSenderBenhNhan = socket.user.maNhom === 'BENHNHAN';
       const needsAcceptance = isSenderBenhNhan && isReceiverAdminOrYTa;
 
       if (needsAcceptance) {
@@ -233,10 +234,12 @@ io.on("connection", (socket) => {
         const roomName = existingRoom.roomName;
         
         // ✅ Kiểm tra thời gian 15 phút nếu là bệnh nhân chat với admin/y tá
-        const senderUser = await TaiKhoan.findByPk(senderId);
-        const receiverUser = await TaiKhoan.findByPk(receiverId);
-        
-        if (senderUser && receiverUser) {
+        if (socket.user.maNhom === 'BENHNHAN') {
+          const receiverUser = await TaiKhoan.findByPk(receiverId, {
+            attributes: ['maTK', 'maNhom'],
+          });
+
+          if (receiverUser) {
           let isReceiverAdminOrYTa = false;
           if (receiverUser.maNhom === 'ADMIN') {
             isReceiverAdminOrYTa = true;
@@ -247,7 +250,7 @@ io.on("connection", (socket) => {
             }
           }
           
-          const needsTimeLimit = senderUser.maNhom === 'BENHNHAN' && isReceiverAdminOrYTa;
+          const needsTimeLimit = isReceiverAdminOrYTa;
           
           if (needsTimeLimit && !chatService.isChatActive(existingRoom)) {
             // Hết thời gian: cập nhật trạng thái
@@ -269,6 +272,7 @@ io.on("connection", (socket) => {
               trangThai: 'EXPIRED',
               message: "Cuộc trò chuyện đã hết hạn (15 phút). Vui lòng gửi yêu cầu chat mới."
             });
+          }
           }
         }
         
@@ -308,10 +312,12 @@ io.on("connection", (socket) => {
       }
       
       // ✅ KIỂM TRA THỜI GIAN 15 PHÚT (chỉ cho bệnh nhân chat với admin/y tá)
-      const senderUser = await TaiKhoan.findByPk(senderId);
-      const receiverUser = await TaiKhoan.findByPk(receiverId);
-      
-      if (senderUser && receiverUser) {
+      if (socket.user.maNhom === 'BENHNHAN') {
+        const receiverUser = await TaiKhoan.findByPk(receiverId, {
+          attributes: ['maTK', 'maNhom'],
+        });
+
+        if (receiverUser) {
         let isReceiverAdminOrYTa = false;
         if (receiverUser.maNhom === 'ADMIN') {
           isReceiverAdminOrYTa = true;
@@ -322,7 +328,7 @@ io.on("connection", (socket) => {
           }
         }
         
-        const needsTimeLimit = senderUser.maNhom === 'BENHNHAN' && isReceiverAdminOrYTa;
+        const needsTimeLimit = isReceiverAdminOrYTa;
         
         if (needsTimeLimit) {
           // Kiểm tra thời gian 15 phút
@@ -343,6 +349,7 @@ io.on("connection", (socket) => {
             });
           }
         }
+        }
       }
       
       const roomName = existingRoom.roomName; 
@@ -359,14 +366,8 @@ io.on("connection", (socket) => {
          throw new Error("Không thể lưu tin nhắn"); 
       }
 
-      // 2. Đảm bảo cả sender và receiver đều join room (nếu chưa join)
+      // 2. Đảm bảo sender join room để nhận message realtime trong phiên hiện tại
       socket.join(roomName);
-      try {
-        const receiverSockets = await io.in(receiverId).fetchSockets();
-        receiverSockets.forEach(s => s.join(roomName));
-      } catch (err) {
-        console.error("Lỗi join room cho receiver:", err);
-      }
 
       // 3. Gửi tin nhắn đến TẤT CẢ client đang ở trong phòng đó
       const messageData = {
