@@ -155,9 +155,18 @@ cp .env.example .env
 | `MYSQL_DATABASE` | Yes (Docker) | Initial database name |
 | `DB_HOST` | Yes | Backend DB host |
 | `DB_PORT` | Recommended | DB port (usually `3306`) |
+| `DB_TIMEZONE` | Recommended | Sequelize/MySQL timezone (format `+07:00`) |
 | `DB_USER` | Yes | DB user |
 | `DB_PASSWORD` | Yes | DB password |
 | `DB_NAME` | Yes | Database name |
+| `DB_POOL_MAX` | Recommended | Sequelize pool max connections |
+| `DB_POOL_MIN` | Recommended | Sequelize pool min connections |
+| `DB_POOL_ACQUIRE_MS` | Recommended | Max wait time (ms) to acquire DB connection |
+| `DB_POOL_IDLE_MS` | Recommended | Idle timeout (ms) before releasing DB connection |
+| `DB_POOL_EVICT_MS` | Recommended | Pool eviction interval (ms) |
+| `DB_RETRY_MAX` | Recommended | Max retry attempts for transient DB errors |
+| `DB_RETRY_BACKOFF_MS` | Recommended | Base backoff (ms) between DB retries |
+| `DB_RETRY_BACKOFF_EXPONENT` | Recommended | Backoff exponent for retry delay growth |
 | `PORT` | Recommended | Backend port (default `4000`) |
 | `JWT_SECRET` | Yes | Secret for JWT signing/verification |
 | `DATA_ENCRYPTION_KEY` | Yes | Encryption key for blockchain payload data |
