@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { getAllPhanHoi, updatePhanHoi, deletePhanHoi, getPhanHoiStats } from "../../services/phanhoi/phanhoiService";
 import toast from "react-hot-toast";
-import { MessageSquare, Search, Edit, Trash2, X, Save, Clock, CheckCircle, AlertCircle, BarChart3 } from 'lucide-react';
+import { MessageSquare, Search, Edit, Trash2, X, Save, Clock, CheckCircle, AlertCircle, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 
 const ManagePhanHoiPage = () => {
@@ -11,6 +11,8 @@ const ManagePhanHoiPage = () => {
   const [search, setSearch] = useState("");
   const [filterTrangThai, setFilterTrangThai] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   useEffect(() => {
     fetchData();
@@ -78,13 +80,34 @@ const ManagePhanHoiPage = () => {
   };
 
   const filtered = useMemo(() => {
+    const searchTerm = search.toLowerCase();
     return phanHoiList.filter(
       (ph) =>
-        ph.tieuDe?.toLowerCase().includes(search.toLowerCase()) ||
-        ph.noiDung?.toLowerCase().includes(search.toLowerCase()) ||
-        ph.BenhNhan?.hoTen?.toLowerCase().includes(search.toLowerCase())
+        ph.tieuDe?.toLowerCase().includes(searchTerm) ||
+        ph.noiDung?.toLowerCase().includes(searchTerm) ||
+        ph.BenhNhan?.hoTen?.toLowerCase().includes(searchTerm)
     );
   }, [phanHoiList, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterTrangThai]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedPhanHoi = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage]);
+
+  const fromItem = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const toItem = Math.min(currentPage * pageSize, filtered.length);
 
   const getStatusBadge = (trangThai) => {
     const statusMap = {
@@ -256,6 +279,13 @@ const ManagePhanHoiPage = () => {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+          <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-sm text-gray-600 flex items-center justify-between">
+            <span>
+              Hiển thị <strong>{fromItem}-{toItem}</strong> trên <strong>{filtered.length}</strong> kết quả
+            </span>
+            <span>Trang {currentPage}/{totalPages}</span>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
@@ -270,7 +300,7 @@ const ManagePhanHoiPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filtered.map((ph) => (
+                {paginatedPhanHoi.map((ph) => (
                   <tr key={ph.maPH} className="hover:bg-blue-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-800">{ph.maPH}</td>
                     <td className="px-6 py-4 text-gray-700">{ph.BenhNhan?.hoTen || ph.maBN}</td>
@@ -301,6 +331,29 @@ const ManagePhanHoiPage = () => {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                <ChevronLeft size={16} />
+                Trước
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Sau
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
