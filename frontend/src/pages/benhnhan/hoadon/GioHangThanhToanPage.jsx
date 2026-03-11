@@ -27,6 +27,9 @@ const GioHangThanhToanPage = () => {
   const [chiTietThanhToan, setChiTietThanhToan] = useState([]);
   const [lichChoThanhToan, setLichChoThanhToan] = useState([]);
   const [lichDaHuy, setLichDaHuy] = useState([]);
+  const [pendingPage, setPendingPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
+  const hoaDonPageSize = 6;
   
   // Tab state cho hóa đơn
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' hoặc 'history'
@@ -217,6 +220,8 @@ const GioHangThanhToanPage = () => {
       const res = await getMyHoaDon(maBN);
       const hoaDonData = res.data.data || [];
       setHoaDonList(hoaDonData);
+      setPendingPage(1);
+      setHistoryPage(1);
       
       // ✅ Tự động chọn hóa đơn nếu có maHD trong URL
       const maHDFromUrl = searchParams.get('maHD');
@@ -440,6 +445,31 @@ const GioHangThanhToanPage = () => {
   const hoaDonChuaThanhToan = hoaDonList.filter(hd => hd.trangThai !== 'DA_THANH_TOAN' && hd.trangThai !== 'DA_HUY');
   const hoaDonDaThanhToan = hoaDonList.filter(hd => hd.trangThai === 'DA_THANH_TOAN');
   const hoaDonDaHuy = hoaDonList.filter(hd => hd.trangThai === 'DA_HUY');
+
+  const pendingTotalPages = Math.max(1, Math.ceil(hoaDonChuaThanhToan.length / hoaDonPageSize));
+  const historyTotalPages = Math.max(1, Math.ceil(hoaDonDaThanhToan.length / hoaDonPageSize));
+
+  useEffect(() => {
+    if (pendingPage > pendingTotalPages) {
+      setPendingPage(pendingTotalPages);
+    }
+  }, [pendingPage, pendingTotalPages]);
+
+  useEffect(() => {
+    if (historyPage > historyTotalPages) {
+      setHistoryPage(historyTotalPages);
+    }
+  }, [historyPage, historyTotalPages]);
+
+  const pendingInvoices = hoaDonChuaThanhToan.slice(
+    (pendingPage - 1) * hoaDonPageSize,
+    pendingPage * hoaDonPageSize
+  );
+
+  const historyInvoices = hoaDonDaThanhToan.slice(
+    (historyPage - 1) * hoaDonPageSize,
+    historyPage * hoaDonPageSize
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -707,8 +737,8 @@ const GioHangThanhToanPage = () => {
                           <p className="text-xs text-gray-500 mt-1">Xác nhận giỏ hàng để tạo hóa đơn</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                          {hoaDonChuaThanhToan.map(hd => (
+                        <div className="space-y-3">
+                          {pendingInvoices.map(hd => (
                             <div 
                               key={hd.maHD} 
                               className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
@@ -732,6 +762,32 @@ const GioHangThanhToanPage = () => {
                               </div>
                             </div>
                           ))}
+
+                          {pendingTotalPages > 1 && (
+                            <div className="pt-2 flex items-center justify-between gap-2">
+                              <span className="text-xs text-gray-500">
+                                Trang {pendingPage}/{pendingTotalPages}
+                              </span>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setPendingPage((prev) => Math.max(1, prev - 1))}
+                                  disabled={pendingPage === 1}
+                                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                >
+                                  Trước
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPendingPage((prev) => Math.min(pendingTotalPages, prev + 1))}
+                                  disabled={pendingPage === pendingTotalPages}
+                                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                >
+                                  Sau
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </>
@@ -749,8 +805,8 @@ const GioHangThanhToanPage = () => {
                           <p className="text-xs text-gray-500 mt-1">Các hóa đơn đã thanh toán sẽ hiển thị ở đây</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                          {hoaDonDaThanhToan.map(hd => (
+                        <div className="space-y-3">
+                          {historyInvoices.map(hd => (
                             <div 
                               key={hd.maHD} 
                               className="p-4 rounded-xl border-2 border-green-200 bg-green-50 cursor-pointer transition-all hover:shadow-md"
@@ -770,6 +826,32 @@ const GioHangThanhToanPage = () => {
                               </div>
                             </div>
                           ))}
+
+                          {historyTotalPages > 1 && (
+                            <div className="pt-2 flex items-center justify-between gap-2">
+                              <span className="text-xs text-gray-500">
+                                Trang {historyPage}/{historyTotalPages}
+                              </span>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setHistoryPage((prev) => Math.max(1, prev - 1))}
+                                  disabled={historyPage === 1}
+                                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                >
+                                  Trước
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setHistoryPage((prev) => Math.min(historyTotalPages, prev + 1))}
+                                  disabled={historyPage === historyTotalPages}
+                                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                >
+                                  Sau
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </>
