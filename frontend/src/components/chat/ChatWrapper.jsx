@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axiosClient from '../../api/axiosClient.js';
 import {
   connectSocket,
@@ -814,10 +814,32 @@ const MainMenu = ({ contacts, loading, onSelectAdmin, onSelectYtaList }) => {
  */
 const ChatList = ({ title, contacts, loading, onSelectContact, onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 30;
 
-  const filteredContacts = contacts.filter(c => 
-    c.tenDangNhap.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const filteredContacts = useMemo(() => {
+    if (!normalizedSearch) return contacts;
+    return contacts.filter((c) => c.tenDangNhap.toLowerCase().includes(normalizedSearch));
+  }, [contacts, normalizedSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredContacts.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const visibleContacts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredContacts.slice(start, start + pageSize);
+  }, [filteredContacts, currentPage]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -845,7 +867,7 @@ const ChatList = ({ title, contacts, loading, onSelectContact, onBack }) => {
       {loading && <p className="p-4 text-center text-gray-500">Đang tải...</p>}
       
       <ul className="divide-y divide-gray-200 overflow-y-auto flex-1">
-          {filteredContacts.map(contact => (
+          {visibleContacts.map(contact => (
             <li
                 key={contact.maTK}
                 onClick={() => onSelectContact(contact)}
@@ -869,7 +891,34 @@ const ChatList = ({ title, contacts, loading, onSelectContact, onBack }) => {
                 </div>
             </li>
           ))}
+          {!loading && visibleContacts.length === 0 && (
+            <li className="p-4 text-center text-sm text-gray-500">Không tìm thấy liên hệ phù hợp</li>
+          )}
       </ul>
+
+      {totalPages > 1 && (
+        <div className="p-3 border-t border-gray-200 flex items-center justify-between text-xs text-gray-600">
+          <span>Trang {currentPage}/{totalPages}</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-2.5 py-1 rounded-md border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Trước
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-2.5 py-1 rounded-md border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Sau
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
