@@ -13,6 +13,27 @@ const env = require("../../config/env");
 const SESSION_COOKIE_NAME = "session_token";
 const CSRF_COOKIE_NAME = "csrf_token";
 
+function generateBlockchainKeyPair() {
+  return new Promise((resolve, reject) => {
+    crypto.generateKeyPair(
+      "rsa",
+      {
+        modulusLength: 2048,
+        publicKeyEncoding: { type: "spki", format: "pem" },
+        privateKeyEncoding: { type: "pkcs8", format: "pem" },
+      },
+      (error, publicKey, privateKey) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve({ publicKey, privateKey });
+      }
+    );
+  });
+}
+
 function isProduction() {
   return process.env.NODE_ENV === "production";
 }
@@ -122,11 +143,7 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(matKhau, 10);
     const maTK = uuidv4().slice(0, 8).toUpperCase();
 
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-      modulusLength: 2048,
-      publicKeyEncoding: { type: 'spki', format: 'pem' },
-      privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-    });
+    const { publicKey, privateKey } = await generateBlockchainKeyPair();
 
     const newUser = await TaiKhoan.create({
       maTK, tenDangNhap, matKhau: hashedPassword, email, maNhom, trangThai: true, publicKey, privateKey
@@ -262,9 +279,7 @@ exports.googleLogin = async (req, res) => {
       const hashed = await bcrypt.hash(fakePass, 10);
 
       // TẠO KEY PAIR CHO BLOCKCHAIN
-      const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-        modulusLength: 2048, publicKeyEncoding: { type: 'spki', format: 'pem' }, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-      });
+      const { publicKey, privateKey } = await generateBlockchainKeyPair();
 
       user = await TaiKhoan.create({
         maTK, tenDangNhap: tenDangNhap || email.split("@")[0], email, matKhau: hashed, maNhom: maNhom || "BENHNHAN", trangThai: true, publicKey, privateKey
@@ -487,3 +502,4 @@ exports.resetPassword = async (req, res) => {
 module.exports.getSessionCookieOptions = getSessionCookieOptions;
 module.exports.getCsrfCookieOptions = getCsrfCookieOptions;
 module.exports.clearAuthCookies = clearAuthCookies;
+module.exports.generateBlockchainKeyPair = generateBlockchainKeyPair;

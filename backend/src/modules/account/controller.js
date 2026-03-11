@@ -30,6 +30,35 @@ const {
   HoSoAnChuoiKham 
 } = require("../../models");
 
+function generateBlockchainKeyPair() {
+  return new Promise((resolve, reject) => {
+    crypto.generateKeyPair(
+      "rsa",
+      {
+        modulusLength: 2048,
+        publicKeyEncoding: {
+          type: "spki",
+          format: "pem",
+        },
+        privateKeyEncoding: {
+          type: "pkcs8",
+          format: "pem",
+        },
+      },
+      (error, publicKey, privateKey) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve({ publicKey, privateKey });
+      }
+    );
+  });
+}
+
+exports.generateBlockchainKeyPair = generateBlockchainKeyPair;
+
 // Tạo mới tài khoản
 exports.register = async (req, res) => {
   
@@ -68,17 +97,7 @@ exports.register = async (req, res) => {
 
     const hashed = await bcrypt.hash(matKhau, 10);
     const maTK = uuidv4().slice(0, 8).toUpperCase(); 
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-      modulusLength: 2048, // Độ dài key
-      publicKeyEncoding: {
-        type: 'spki',
-        format: 'pem'
-      },
-      privateKeyEncoding: {
-        type: 'pkcs8',
-        format: 'pem'
-      }
-    })
+    const { publicKey, privateKey } = await generateBlockchainKeyPair();
     const newTK = await TaiKhoan.create({
       maTK,
       tenDangNhap,
@@ -370,11 +389,7 @@ exports.dangKyBenhNhan = async (req, res) => {
     
     // === BẮT ĐẦU SỬA ===
     // (Thêm logic tạo key pair)
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-      modulusLength: 2048,
-      publicKeyEncoding: { type: 'spki', format: 'pem' },
-      privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-    });
+    const { publicKey, privateKey } = await generateBlockchainKeyPair();
 
     const taiKhoan = await TaiKhoan.create({
       maTK,
