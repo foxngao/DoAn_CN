@@ -8,6 +8,7 @@
     "test": "vitest run",
     "test:ci": "vitest run --reporter=verbose",
     "build": "vite build",
+    "build:ci": "vite build && node scripts/check-bundle-budget.cjs",
     "preview": "vite preview"
   },
   "dependencies": {
