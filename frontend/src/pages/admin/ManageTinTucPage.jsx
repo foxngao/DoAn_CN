@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { getAllTinTuc, createTinTuc, updateTinTuc, deleteTinTuc } from "../../services/tintuc/tintucService";
 import toast from "react-hot-toast";
-import { Newspaper, Search, Edit, Trash2, X, Plus, Save, Eye, Calendar } from 'lucide-react';
+import { Newspaper, Search, Edit, Trash2, X, Plus, Save, Eye, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 
 const ManageTinTucPage = () => {
@@ -10,6 +10,8 @@ const ManageTinTucPage = () => {
   const [search, setSearch] = useState("");
   const [filterTrangThai, setFilterTrangThai] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   useEffect(() => {
     fetchData();
@@ -78,12 +80,33 @@ const ManageTinTucPage = () => {
   };
 
   const filtered = useMemo(() => {
+    const searchTerm = search.toLowerCase();
     return tinTucList.filter(
       (tin) =>
-        tin.tieuDe?.toLowerCase().includes(search.toLowerCase()) ||
-        tin.tomTat?.toLowerCase().includes(search.toLowerCase())
+        tin.tieuDe?.toLowerCase().includes(searchTerm) ||
+        tin.tomTat?.toLowerCase().includes(searchTerm)
     );
   }, [tinTucList, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterTrangThai]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedTinTuc = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage]);
+
+  const fromItem = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const toItem = Math.min(currentPage * pageSize, filtered.length);
 
   if (loading) {
     return (
@@ -256,6 +279,13 @@ const ManageTinTucPage = () => {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+          <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-sm text-gray-600 flex items-center justify-between">
+            <span>
+              Hiển thị <strong>{fromItem}-{toItem}</strong> trên <strong>{filtered.length}</strong> kết quả
+            </span>
+            <span>Trang {currentPage}/{totalPages}</span>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
@@ -269,7 +299,7 @@ const ManageTinTucPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filtered.map((tin) => (
+                {paginatedTinTuc.map((tin) => (
                   <tr key={tin.maTin} className="hover:bg-green-50 transition-colors">
                     <td className="px-6 py-4 text-gray-700 font-semibold">{tin.tieuDe}</td>
                     <td className="px-6 py-4">
@@ -317,6 +347,29 @@ const ManageTinTucPage = () => {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                <ChevronLeft size={16} />
+                Trước
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Sau
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
