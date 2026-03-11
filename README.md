@@ -165,6 +165,8 @@ cp .env.example .env
 | `PRIVATE_KEY_ENCRYPTION_KEY` | Yes | Private-key encryption key (recommended: 64-char hex) |
 | `SESSION_COOKIE_CROSS_SITE` | Recommended | `true/false` cross-site cookie policy |
 | `SESSION_COOKIE_DOMAIN` | Optional | Cookie domain for multi-subdomain deployment |
+| `LOG_LEVEL` | Recommended | Backend log level (`error`, `warn`, `info`, `debug`) |
+| `SOCKET_SLOW_THRESHOLD_MS` | Recommended | Slow threshold (ms) for Socket.IO telemetry warning logs |
 | `FRONTEND_ORIGIN` | Recommended | Frontend origin for CORS |
 | `ALLOWED_ORIGINS` | Recommended | Allowed origins list (comma-separated) |
 | `CHATBOT_API_URL` | Yes | Chatbot endpoint |
@@ -314,7 +316,10 @@ npm run test:ci --prefix backend
 npm run lint --prefix frontend
 npm run test --prefix frontend
 npm run build --prefix frontend
+npm run build:ci --prefix frontend
 ```
+
+`build:ci` includes a bundle budget gate to prevent accidental JS bundle regressions.
 
 ---
 
@@ -324,13 +329,9 @@ Workflow file: `.github/workflows/ci.yml`
 
 Current CI flow:
 
-1. Setup Node 20
-2. Install backend/frontend dependencies
-3. Lint backend
-4. Test backend
-5. Lint frontend
-6. Test frontend
-7. Build frontend
+1. Run **backend-quality** job (Node 20, install backend deps, lint backend, test backend)
+2. Run **frontend-quality** job in parallel (Node 20, install frontend deps, lint frontend, test frontend, `build:ci`)
+3. `build:ci` enforces bundle budget thresholds and fails CI if exceeded
 
 The pipeline includes minimum backend test env vars (DB/JWT/encryption vars) so tests do not fail due to missing environment variables.
 
@@ -455,6 +456,8 @@ Detailed checklist: `docs/runbooks/backup-restore.md`.
 - Logger: `backend/src/utils/logger.js`
 - Log level controlled by `LOG_LEVEL` / `NODE_ENV`
 - Request correlation with `x-request-id` in `backend/src/app.js`
+- Socket telemetry in `backend/src/server.js` logs event duration/outcome for `requestChat`, `openActiveRoom`, `sendMessage`
+- Slow socket events are promoted to warning logs using `SOCKET_SLOW_THRESHOLD_MS` (default `300ms`)
 
 ### Incident monitoring
 
@@ -469,7 +472,7 @@ Minimum commands to run:
 
 ```bash
 npm run lint --prefix backend && npm run test --prefix backend
-npm run lint --prefix frontend && npm run test --prefix frontend && npm run build --prefix frontend
+npm run lint --prefix frontend && npm run test --prefix frontend && npm run build:ci --prefix frontend
 docker compose -f docker-compose.prod.yml config
 ```
 

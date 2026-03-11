@@ -38,6 +38,8 @@ services:
       - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY:-DungMotChuoiBiMatVaDaiHon256BitODay_ThieuBaoMat}
       - HASH_PEPPER=${HASH_PEPPER:-ThemMotChuoiPepperBiMatChoHash}
       - PRIVATE_KEY_ENCRYPTION_KEY=${PRIVATE_KEY_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - SOCKET_SLOW_THRESHOLD_MS=${SOCKET_SLOW_THRESHOLD_MS:-300}
       - CHATBOT_API_URL=${CHATBOT_API_URL:-https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent}
       - CHATBOT_API_KEY=${CHATBOT_API_KEY:-your_chatbot_api_key}
       - CHATBOT_MODEL=${CHATBOT_MODEL:-gemini-2.5-flash-preview-09-2025}
