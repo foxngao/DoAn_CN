@@ -6,9 +6,41 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const chatService = require("./chat/chatService"); 
 const env = require("./config/env");
+const logger = require("./utils/logger");
 
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = env.JWT_SECRET;
+const SOCKET_SLOW_THRESHOLD_MS = Number(process.env.SOCKET_SLOW_THRESHOLD_MS || 300);
+
+function logSocketEventPerformance(eventName, socket, startedAt, meta = {}) {
+  const durationMs = Date.now() - startedAt;
+  const payload = {
+    eventName,
+    socketId: socket.id,
+    maTK: socket.user?.maTK,
+    maNhom: socket.user?.maNhom,
+    durationMs,
+    ...meta,
+  };
+
+  if (durationMs >= SOCKET_SLOW_THRESHOLD_MS) {
+    logger.warn("Socket event slow", payload);
+    return;
+  }
+
+  logger.info("Socket event completed", payload);
+}
+
+function logSocketEventError(eventName, socket, error, meta = {}) {
+  logger.error("Socket event failed", {
+    eventName,
+    socketId: socket.id,
+    maTK: socket.user?.maTK,
+    maNhom: socket.user?.maNhom,
+    errorMessage: error?.message,
+    ...meta,
+  });
+}
 
 // Tạo HTTP server từ Express app
 const server = http.createServer(app);
@@ -62,8 +94,18 @@ io.on("connection", (socket) => {
 
   // === 1. Yêu cầu Chat (Người gửi: A) ===
   socket.on("requestChat", async ({ receiverId }) => {
+    const startedAt = Date.now();
+    const telemetry = {
+      receiverId,
+      outcome: "unknown",
+      mode: "unknown",
+    };
+
     const senderId = socket.user.maTK;
-    if (senderId === receiverId) return; 
+    if (senderId === receiverId) {
+      telemetry.outcome = "ignored_self_receiver";
+      return;
+    }
 
     try {
       // ✅ Kiểm tra xem có cần chấp nhận không (chỉ bệnh nhân chat với admin/y tá)
@@ -72,6 +114,7 @@ io.on("connection", (socket) => {
       });
       
       if (!receiverUser) {
+        telemetry.outcome = "receiver_not_found";
         return socket.emit("chatError", { message: "Không tìm thấy thông tin người dùng." });
       }
 
@@ -92,9 +135,11 @@ io.on("connection", (socket) => {
       const needsAcceptance = isSenderBenhNhan && isReceiverAdminOrYTa;
 
       if (needsAcceptance) {
+        telemetry.mode = "needs_acceptance";
         // Cần chấp nhận: gửi yêu cầu
         const requestKey = [senderId, receiverId].sort().join('_');
         if (pendingRequests[requestKey]) {
+          telemetry.outcome = "duplicate_request";
           return socket.emit("chatError", { message: "Yêu cầu đã được gửi trước đó. Vui lòng chờ." });
         }
         
@@ -117,6 +162,7 @@ io.on("connection", (socket) => {
         
         // Báo lại cho người gửi là đã gửi yêu cầu thành công
         socket.emit("requestSent", { receiverId });
+        telemetry.outcome = "request_sent";
 
         console.log(`💬 Yêu cầu chat từ ${socket.user.tenDangNhap} (Bệnh nhân) tới ${receiverId} (Admin/Y tá) - Cần chấp nhận.`);
         
@@ -129,6 +175,7 @@ io.on("connection", (socket) => {
           }
         }, 5 * 60 * 1000);
       } else {
+        telemetry.mode = "auto_activate";
         // Không cần chấp nhận: tự động tạo phòng và join
         const roomName = await chatService.createRoom(senderId, receiverId, new Date());
         
@@ -146,12 +193,19 @@ io.on("connection", (socket) => {
         
         io.to(receiverId).emit("chatAccepted", { roomName, partnerId: senderId });
         io.to(receiverId).emit("roomHistory", { room: roomName, history });
+        telemetry.outcome = "room_auto_activated";
         
         console.log(`✅ Chat tự động kích hoạt giữa ${socket.user.tenDangNhap} và ${receiverId}`);
       }
     } catch (error) {
+      telemetry.outcome = "error";
       console.error("Lỗi khi xử lý yêu cầu chat:", error);
+      logSocketEventError("requestChat", socket, error, telemetry);
       socket.emit("chatError", { message: "Lỗi hệ thống khi xử lý yêu cầu chat" });
+    } finally {
+      if (telemetry.outcome !== "error") {
+        logSocketEventPerformance("requestChat", socket, startedAt, telemetry);
+      }
     }
   });
   
@@ -222,11 +276,18 @@ io.on("connection", (socket) => {
 
   // === 4. Mở lại phòng chat đã kích hoạt hoặc xem lịch sử (Khác với joinRoom cũ) ===
   socket.on("openActiveRoom", async ({ receiverId }) => {
+    const startedAt = Date.now();
+    const telemetry = {
+      receiverId,
+      outcome: "unknown",
+    };
+
     try {
         const senderId = socket.user.maTK;
         const existingRoom = await chatService.findRoom(senderId, receiverId);
         
         if (!existingRoom) {
+             telemetry.outcome = "room_not_found";
              // Nếu không tìm thấy phòng (chưa chat lần nào), trả về lịch sử rỗng và không join room
              return socket.emit("roomHistory", { room: null, history: [] });
         }
@@ -266,6 +327,7 @@ io.on("connection", (socket) => {
             
             // Vẫn trả về lịch sử nhưng với trạng thái EXPIRED
             const history = await chatService.getRoomHistory(roomName);
+            telemetry.outcome = "room_expired";
             return socket.emit("roomHistory", { 
               room: roomName, 
               history,
@@ -282,6 +344,7 @@ io.on("connection", (socket) => {
         
         // Load lịch sử tin nhắn
         const history = await chatService.getRoomHistory(roomName);
+        telemetry.outcome = "room_opened";
         socket.emit("roomHistory", { 
           room: roomName, 
           history,
@@ -290,24 +353,39 @@ io.on("connection", (socket) => {
         });
         
     } catch (error) {
+       telemetry.outcome = "error";
        console.error("Lỗi khi mở lại phòng:", error);
+       logSocketEventError("openActiveRoom", socket, error, telemetry);
        socket.emit("chatError", { message: "Không thể mở lại phòng" });
+    } finally {
+      if (telemetry.outcome !== "error") {
+        logSocketEventPerformance("openActiveRoom", socket, startedAt, telemetry);
+      }
     }
   });
   
   // === 5. Gửi tin nhắn (Kiểm tra phòng đã được tạo và thời gian 15 phút) ===
   socket.on("sendMessage", async (data) => {
+    const startedAt = Date.now();
+    const telemetry = {
+      receiverId: data?.receiverId,
+      outcome: "unknown",
+      messageLength: data?.message?.trim ? data.message.trim().length : 0,
+    };
+
     try {
       const { receiverId, message } = data; 
       const senderId = socket.user.maTK; 
       
       if (!receiverId || !message || !message.trim()) { 
+        telemetry.outcome = "invalid_payload";
         return socket.emit("chatError", { message: "Thiếu thông tin người nhận hoặc tin nhắn" }); 
       }
       
       // KIỂM TRA PHÒNG ĐÃ ĐƯỢC TẠO CHƯA (phòng phải tồn tại trong DB)
       const existingRoom = await chatService.findRoom(senderId, receiverId);
       if (!existingRoom) {
+          telemetry.outcome = "room_not_found";
           return socket.emit("chatError", { message: "Phòng chat chưa được kích hoạt. Vui lòng gửi yêu cầu chat trước." });
       }
       
@@ -388,9 +466,17 @@ io.on("connection", (socket) => {
         message: message.trim()
       });
 
+      telemetry.outcome = "sent";
+
     } catch (error) {
+      telemetry.outcome = "error";
       console.error("Lỗi khi gửi tin nhắn:", error); 
+      logSocketEventError("sendMessage", socket, error, telemetry);
       socket.emit("chatError", { message: "Không thể gửi tin nhắn" }); 
+    } finally {
+      if (telemetry.outcome !== "error") {
+        logSocketEventPerformance("sendMessage", socket, startedAt, telemetry);
+      }
     }
   });
 
