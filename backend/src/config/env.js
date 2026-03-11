@@ -10,6 +10,21 @@ const missingVars = requiredVars.filter((name) => {
   return typeof value !== "string" || value.trim() === "";
 });
 
+function parsePositiveIntEnv(name, defaultValue) {
+  const rawValue = process.env[name];
+
+  if (rawValue === undefined || rawValue === null || rawValue === "") {
+    return defaultValue;
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid ${name}: expected a positive integer, received '${rawValue}'`);
+  }
+
+  return parsed;
+}
+
 if (missingVars.length > 0) {
   throw new Error(
     `Missing required environment variables: ${missingVars.join(", ")}. Please set them in backend/.env or process environment.`
@@ -23,6 +38,7 @@ const env = {
   DB_PASSWORD: process.env.DB_PASSWORD,
   DB_NAME: process.env.DB_NAME,
   DB_PORT: process.env.DB_PORT,
+  SOCKET_SLOW_THRESHOLD_MS: parsePositiveIntEnv("SOCKET_SLOW_THRESHOLD_MS", 300),
 };
 
 module.exports = env;

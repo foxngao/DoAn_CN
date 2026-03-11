@@ -10,7 +10,7 @@ const logger = require("./utils/logger");
 
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = env.JWT_SECRET;
-const SOCKET_SLOW_THRESHOLD_MS = Number(process.env.SOCKET_SLOW_THRESHOLD_MS || 300);
+const SOCKET_SLOW_THRESHOLD_MS = env.SOCKET_SLOW_THRESHOLD_MS;
 
 function logSocketEventPerformance(eventName, socket, startedAt, meta = {}) {
   const durationMs = Date.now() - startedAt;
