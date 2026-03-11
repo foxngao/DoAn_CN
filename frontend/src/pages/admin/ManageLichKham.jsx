@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "../../api/axiosClient";
 import toast from "react-hot-toast";
-import { Calendar, Search, Edit, Trash2, X, Plus, Save, Clock, User, Stethoscope } from 'lucide-react';
+import { Calendar, Search, Edit, Trash2, X, Plus, Save, Clock, User, Stethoscope, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 
 function ManageLichKham() {
@@ -11,6 +11,8 @@ function ManageLichKham() {
   const [dsBenhNhan, setDsBenhNhan] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   const fetchLichKham = async () => {
     setLoading(true);
@@ -92,14 +94,35 @@ function ManageLichKham() {
   };
 
   const filtered = useMemo(() => {
+    const searchTerm = search.toLowerCase();
     return lichList.filter(
       (lich) =>
-        lich.BacSi?.hoTen?.toLowerCase().includes(search.toLowerCase()) ||
-        lich.BenhNhan?.hoTen?.toLowerCase().includes(search.toLowerCase()) ||
-        lich.maLich?.toLowerCase().includes(search.toLowerCase()) ||
-        lich.phong?.toLowerCase().includes(search.toLowerCase())
+        lich.BacSi?.hoTen?.toLowerCase().includes(searchTerm) ||
+        lich.BenhNhan?.hoTen?.toLowerCase().includes(searchTerm) ||
+        lich.maLich?.toLowerCase().includes(searchTerm) ||
+        lich.phong?.toLowerCase().includes(searchTerm)
     );
   }, [lichList, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedLich = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage]);
+
+  const fromItem = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const toItem = Math.min(currentPage * pageSize, filtered.length);
 
   const getStatusBadge = (trangThai) => {
     const statusMap = {
@@ -310,6 +333,13 @@ function ManageLichKham() {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+          <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-sm text-gray-600 flex items-center justify-between">
+            <span>
+              Hiển thị <strong>{fromItem}-{toItem}</strong> trên <strong>{filtered.length}</strong> kết quả
+            </span>
+            <span>Trang {currentPage}/{totalPages}</span>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
@@ -325,7 +355,7 @@ function ManageLichKham() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filtered.map((lich) => (
+                {paginatedLich.map((lich) => (
                   <tr key={lich.maLich} className="hover:bg-orange-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-800">{lich.maLich}</td>
                     <td className="px-6 py-4 text-gray-700 font-semibold">
@@ -370,6 +400,30 @@ function ManageLichKham() {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                <ChevronLeft size={16} />
+                Trước
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Sau
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
