@@ -1,239 +1,182 @@
-# Hospital Management System
+# Hospital Management System (HMS)
 
-This document is a **detailed end-to-end guide** to run, develop, test, harden, and operate the project safely.
-
----
-
-## Table of Contents
-
-1. [Project Overview](#1-project-overview)
-2. [High-Level Architecture](#2-high-level-architecture)
-3. [Directory Structure](#3-directory-structure)
-4. [Technology Stack](#4-technology-stack)
-5. [Environment Requirements](#5-environment-requirements)
-6. [Environment Variables (.env)](#6-environment-variables-env)
-7. [Install & Run Locally (without Docker)](#7-install--run-locally-without-docker)
-8. [Install & Run with Docker (dev)](#8-install--run-with-docker-dev)
-9. [Run Production-like Environment Locally](#9-run-production-like-environment-locally)
-10. [Migrations / Seed Data](#10-migrations--seed-data)
-11. [Lint / Test / Build](#11-lint--test--build)
-12. [GitHub Actions CI](#12-github-actions-ci)
-13. [API Response Contract](#13-api-response-contract)
-14. [Session, Cookie, CSRF](#14-session-cookie-csrf)
-15. [Realtime Chat with Socket.IO](#15-realtime-chat-with-socketio)
-16. [Database Backup / Restore](#16-database-backup--restore)
-17. [Observability & Operations](#17-observability--operations)
-18. [Pre-release Hardening Checklist](#18-pre-release-hardening-checklist)
-19. [Troubleshooting](#19-troubleshooting)
-20. [Related Documentation](#20-related-documentation)
+Tài liệu này là hướng dẫn chuẩn để **setup, chạy, kiểm thử, vận hành và hardening** dự án HMS theo trạng thái code hiện tại.
 
 ---
 
-## 1) Project Overview
+## Mục lục
 
-This hospital management project includes:
-
-- **Backend**: REST API + business logic + Socket.IO realtime workflows.
-- **Frontend**: React + Vite UI, organized by role (Admin/Doctor/Patient/Medical Staff).
-- **Database**: MySQL.
-- **DevOps baseline**: Docker Compose (dev/prod-like), GitHub Actions CI, health checks, backup/restore runbook, incident response runbook.
-
-Current codebase priority: stability, hardening, and practical solo-dev operations.
+1. [Tổng quan](#1-tổng-quan)
+2. [Kiến trúc hệ thống](#2-kiến-trúc-hệ-thống)
+3. [Cấu trúc thư mục](#3-cấu-trúc-thư-mục)
+4. [Yêu cầu môi trường](#4-yêu-cầu-môi-trường)
+5. [Biến môi trường](#5-biến-môi-trường)
+6. [Chạy local (không Docker)](#6-chạy-local-không-docker)
+7. [Chạy bằng Docker Compose (dev)](#7-chạy-bằng-docker-compose-dev)
+8. [Chạy production-like local](#8-chạy-production-like-local)
+9. [Migration / Seed dữ liệu](#9-migration--seed-dữ-liệu)
+10. [Lint / Test / Build](#10-lint--test--build)
+11. [CI (GitHub Actions)](#11-ci-github-actions)
+12. [Xác thực session, CSRF, CORS](#12-xác-thực-session-csrf-cors)
+13. [Realtime Chat (Socket.IO)](#13-realtime-chat-socketio)
+14. [Backup / Restore DB](#14-backup--restore-db)
+15. [Observability & vận hành](#15-observability--vận-hành)
+16. [Bảo mật & hardening](#16-bảo-mật--hardening)
+17. [Troubleshooting nhanh](#17-troubleshooting-nhanh)
+18. [Tài liệu liên quan](#18-tài-liệu-liên-quan)
 
 ---
 
-## 2) High-Level Architecture
+## 1) Tổng quan
 
-### 2.1 Backend
+HMS gồm 3 lớp chính:
+
+- **Backend**: Node.js + Express + Sequelize + Socket.IO
+- **Frontend**: React + Vite
+- **Database**: MySQL 8
+
+Mục tiêu hiện tại của codebase: **ổn định runtime, giảm regression, hardening vận hành và CI thực dụng**.
+
+---
+
+## 2) Kiến trúc hệ thống
+
+### Backend
 
 - Entry point: `backend/src/server.js`
-- App configuration/middleware: `backend/src/app.js`
-- Main route registry: `backend/src/routes/index.js`
-- ORM: Sequelize + models in `backend/src/models`
+- App/middleware: `backend/src/app.js`
+- Route registry: `backend/src/routes/index.js`
+- ORM models: `backend/src/models/*`
 - Business modules: `backend/src/modules/*`
 
-### 2.2 Frontend
+### Frontend
 
-- App routing: `frontend/src/routes/AppRoutes.jsx`
-- Standard HTTP client: `frontend/src/api/axiosClient.js`
-- Session-protected route guard: `frontend/src/auth/PrivateRoute.jsx`
-- Build tool: Vite (`frontend/vite.config.js`)
+- App routes: `frontend/src/routes/AppRoutes.jsx`
+- HTTP client chuẩn: `frontend/src/api/axiosClient.js`
+- Socket service: `frontend/src/services/chat/socketService.js`
 
-### 2.3 Infrastructure
+### Hạ tầng
 
 - Dev compose: `docker-compose.yml`
-- Production-like compose: `docker-compose.prod.yml`
-- CI workflow: `.github/workflows/ci.yml`
+- Prod-like compose: `docker-compose.prod.yml`
+- CI: `.github/workflows/ci.yml`
 
 ---
 
-## 3) Directory Structure
+## 3) Cấu trúc thư mục
 
 ```text
 .
-├─ backend/                  # API server, business logic, tests
+├─ backend/
 │  ├─ src/
-│  │  ├─ app.js
-│  │  ├─ server.js
-│  │  ├─ routes/
-│  │  ├─ models/
-│  │  ├─ modules/
-│  │  └─ utils/
 │  ├─ migrations/
 │  ├─ seeders/
-│  ├─ tests/
-│  └─ package.json
-├─ frontend/                 # React + Vite
+│  └─ tests/
+├─ frontend/
 │  ├─ src/
-│  ├─ vite.config.js
-│  └─ package.json
-├─ scripts/                  # DB operation scripts (backup/restore)
-├─ docs/                     # Runbooks + operational checklists
+│  └─ vite.config.js
+├─ docs/
+├─ scripts/
 ├─ docker-compose.yml
 ├─ docker-compose.prod.yml
 ├─ .env.example
-└─ README.md
+└─ frontend/.env.example
 ```
 
 ---
 
-## 4) Technology Stack
+## 4) Yêu cầu môi trường
 
-### Backend
-
-- Node.js + Express
-- Sequelize + MySQL (`mysql2`)
-- JWT (`jsonwebtoken`)
-- Socket.IO
-- Winston logging
-- Node built-in test runner (`node --test`)
-
-### Frontend
-
-- React 18
-- React Router
-- Axios
-- Vite
-- Vitest + Testing Library
-
----
-
-## 5) Environment Requirements
-
-### Required
+### Bắt buộc
 
 - Node.js >= 20
 - npm
 - MySQL 8.x
 
-### Recommended
+### Khuyến nghị
 
 - Docker + Docker Compose
-- MySQL CLI tools (`mysql`, `mysqldump`) for backup/restore scripts
+- MySQL CLI (`mysql`, `mysqldump`) để dùng script backup/restore
 
 ---
 
-## 6) Environment Variables (.env)
+## 5) Biến môi trường
 
-Create your env file from the template:
+## 5.1 Backend env (root)
+
+Tạo file env từ template:
 
 ```bash
 cp .env.example .env
 ```
 
-> On Windows PowerShell:
->
-> ```powershell
-> Copy-Item .env.example .env
-> ```
+Windows PowerShell:
 
-### 6.1 Main environment variable list
+```powershell
+Copy-Item .env.example .env
+```
 
-| Variable | Required | Description |
-|---|---|---|
-| `MYSQL_ROOT_PASSWORD` | Yes (Docker) | Root password for MySQL container |
-| `MYSQL_DATABASE` | Yes (Docker) | Initial database name |
-| `DB_HOST` | Yes | Backend DB host |
-| `DB_PORT` | Recommended | DB port (usually `3306`) |
-| `DB_TIMEZONE` | Recommended | Sequelize/MySQL timezone (format `+07:00`) |
-| `DB_USER` | Yes | DB user |
-| `DB_PASSWORD` | Yes | DB password |
-| `DB_NAME` | Yes | Database name |
-| `DB_POOL_MAX` | Recommended | Sequelize pool max connections |
-| `DB_POOL_MIN` | Recommended | Sequelize pool min connections |
-| `DB_POOL_ACQUIRE_MS` | Recommended | Max wait time (ms) to acquire DB connection |
-| `DB_POOL_IDLE_MS` | Recommended | Idle timeout (ms) before releasing DB connection |
-| `DB_POOL_EVICT_MS` | Recommended | Pool eviction interval (ms) |
-| `DB_RETRY_MAX` | Recommended | Max retry attempts for transient DB errors |
-| `DB_RETRY_BACKOFF_MS` | Recommended | Base backoff (ms) between DB retries |
-| `DB_RETRY_BACKOFF_EXPONENT` | Recommended | Backoff exponent for retry delay growth |
-| `PORT` | Recommended | Backend port (default `4000`) |
-| `JWT_SECRET` | Yes | Secret for JWT signing/verification |
-| `DATA_ENCRYPTION_KEY` | Yes | Encryption key for blockchain payload data |
-| `HASH_PEPPER` | Yes | Pepper used in blockchain hashing |
-| `PRIVATE_KEY_ENCRYPTION_KEY` | Yes | Private-key encryption key (recommended: 64-char hex) |
-| `SESSION_COOKIE_CROSS_SITE` | Recommended | `true/false` cross-site cookie policy |
-| `SESSION_COOKIE_DOMAIN` | Optional | Cookie domain for multi-subdomain deployment |
-| `LOG_LEVEL` | Recommended | Backend log level (`error`, `warn`, `info`, `debug`) |
-| `SOCKET_SLOW_THRESHOLD_MS` | Recommended | Slow threshold (ms) for Socket.IO telemetry warning logs |
-| `FRONTEND_ORIGIN` | Recommended | Frontend origin for CORS |
-| `ALLOWED_ORIGINS` | Recommended | Allowed origins list (comma-separated) |
-| `CHATBOT_API_URL` | Yes | Chatbot endpoint |
-| `CHATBOT_API_KEY` | Yes | Chatbot API key |
-| `CHATBOT_MODEL` | Recommended | Chatbot model name |
+Các nhóm biến quan trọng trong `.env.example`:
 
-### 6.2 Security notes
+- **DB core**: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_TIMEZONE`
+- **DB pool/retry**: `DB_POOL_MAX`, `DB_POOL_MIN`, `DB_POOL_ACQUIRE_MS`, `DB_POOL_IDLE_MS`, `DB_POOL_EVICT_MS`, `DB_RETRY_MAX`, `DB_RETRY_BACKOFF_MS`, `DB_RETRY_BACKOFF_EXPONENT`
+- **Auth & security**: `JWT_SECRET`, `DATA_ENCRYPTION_KEY`, `HASH_PEPPER`, `PRIVATE_KEY_ENCRYPTION_KEY`
+- **Session/CORS/Log**: `SESSION_COOKIE_CROSS_SITE`, `SESSION_COOKIE_DOMAIN`, `FRONTEND_ORIGIN`, `ALLOWED_ORIGINS`, `LOG_LEVEL`, `SOCKET_SLOW_THRESHOLD_MS`
+- **Chatbot**: `CHATBOT_API_URL`, `CHATBOT_API_KEY`, `CHATBOT_MODEL`
+- **Email/OTP**: `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_SECURE`, `EMAIL_USER`, `EMAIL_PASS`, `OTP_EXPIRES_IN_MINUTES`
 
-- **Do not commit**: `.env`, `backend/.env`, `frontend/.env`.
-- Only commit `.env.example`.
-- If secret exposure is suspected, rotate immediately: `DB_PASSWORD`, `JWT_SECRET`, API keys, encryption keys.
+## 5.2 Frontend env
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+- `VITE_GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `VITE_SOCKET_URL`: tùy chọn override endpoint Socket.IO (để trống sẽ dùng `window.location.origin`)
+
+> ⚠️ Không commit file chứa secret: `.env`, `backend/.env`, `frontend/.env`.
 
 ---
 
-## 7) Install & Run Locally (without Docker)
+## 6) Chạy local (không Docker)
 
-> Run from the repository root.
+Chạy từ root repo:
 
-### Step 1: Install dependencies
+### Bước 1: cài dependency
 
 ```bash
 npm ci --prefix backend
 npm ci --prefix frontend
 ```
 
-### Step 2: Prepare env
+### Bước 2: chuẩn bị env
 
 ```bash
 cp .env.example .env
+cp frontend/.env.example frontend/.env
 ```
 
-Fill in real values in `.env`.
+Nếu chạy MySQL local, thường cần đổi `DB_HOST=localhost` trong `.env`.
 
-### Step 3: Prepare database
-
-Create a MySQL database matching `DB_NAME` and ensure `DB_USER` has access.
-
-### Step 4: Start backend
+### Bước 3: chạy backend
 
 ```bash
 npm run dev --prefix backend
 ```
 
-Default backend URL: `http://localhost:4000`
+Backend mặc định: `http://localhost:4000`
 
-### Step 5: Start frontend
+### Bước 4: chạy frontend
 
 ```bash
 npm run dev --prefix frontend
 ```
 
-Default frontend URL: `http://localhost:5173`
-
-Vite proxies `/api` to `http://localhost:4000` (see `frontend/vite.config.js`).
+Frontend mặc định: `http://localhost:5173`
 
 ---
 
-## 8) Install & Run with Docker (dev)
+## 7) Chạy bằng Docker Compose (dev)
 
 ```bash
 docker compose up -d --build
@@ -241,21 +184,28 @@ docker compose ps
 docker compose logs -f backend
 ```
 
-Stop:
+Tắt:
 
 ```bash
 docker compose down
 ```
 
-### Main services in `docker-compose.yml`
+Service chính:
 
-- `mysql` (MySQL 8)
-- `backend` (runs `npm run dev`)
-- `adminer` (DB UI at `http://localhost:8080`)
+- `mysql`
+- `backend`
+- `adminer` (DB UI tại `http://localhost:8080`)
+
+### Điểm quan trọng
+
+- Backend có healthcheck `/api/health`
+- MySQL có healthcheck
+- Backend chỉ start sau khi MySQL healthy
+- Backend command trong dev compose: `npm run db:migrate && npm run dev` (đảm bảo migration trước khi app chạy)
 
 ---
 
-## 9) Run Production-like Environment Locally
+## 8) Chạy production-like local
 
 ```bash
 docker compose -f docker-compose.prod.yml config
@@ -264,45 +214,32 @@ docker compose -f docker-compose.prod.yml ps
 docker compose -f docker-compose.prod.yml logs -f backend
 ```
 
-Stop:
+Tắt:
 
 ```bash
 docker compose -f docker-compose.prod.yml down
 ```
 
-### Important hardening points in prod compose
+Điểm hardening:
 
-- Uses `:?` syntax to **force** required env vars.
-- `mysql` includes healthcheck.
-- `backend` starts only after `mysql` is healthy.
-- `backend` includes healthcheck (`GET /api/health`).
+- Dùng cú pháp `:?` cho biến quan trọng (fail fast nếu thiếu)
+- Migration-before-start: `npm run db:migrate && npm start`
+- Healthcheck cho cả `mysql` và `backend`
 
 ---
 
-## 10) Migrations / Seed Data
-
-Run from backend:
+## 9) Migration / Seed dữ liệu
 
 ```bash
 npm run db:migrate --prefix backend
-npm run db:seed --prefix backend
-```
-
-Undo latest migration:
-
-```bash
 npm run db:migrate:undo --prefix backend
-```
-
-Check seed idempotency:
-
-```bash
+npm run db:seed --prefix backend
 npm run db:seed:rerun-check --prefix backend
 ```
 
 ---
 
-## 11) Lint / Test / Build
+## 10) Lint / Test / Build
 
 ### Backend
 
@@ -310,14 +247,6 @@ npm run db:seed:rerun-check --prefix backend
 npm run lint --prefix backend
 npm run test --prefix backend
 ```
-
-CI-style backend tests:
-
-```bash
-npm run test:ci --prefix backend
-```
-
-`test:ci` uses `node --test` to avoid glob path issues on Linux CI.
 
 ### Frontend
 
@@ -328,220 +257,124 @@ npm run build --prefix frontend
 npm run build:ci --prefix frontend
 ```
 
-`build:ci` includes a bundle budget gate to prevent accidental JS bundle regressions.
+`build:ci` có bundle budget gate để chặn regression kích thước bundle.
 
 ---
 
-## 12) GitHub Actions CI
+## 11) CI (GitHub Actions)
 
-Workflow file: `.github/workflows/ci.yml`
+Workflow: `.github/workflows/ci.yml`
 
-Current CI flow:
+Gồm 2 job chạy song song:
 
-1. Run **backend-quality** job (Node 20, install backend deps, lint backend, test backend)
-2. Run **frontend-quality** job in parallel (Node 20, install frontend deps, lint frontend, test frontend, `build:ci`)
-3. `build:ci` enforces bundle budget thresholds and fails CI if exceeded
-
-The pipeline includes minimum backend test env vars (DB/JWT/encryption vars) so tests do not fail due to missing environment variables.
+1. `backend-quality`: install deps + lint + test:ci
+2. `frontend-quality`: install deps + lint + test:ci + build:ci
 
 ---
 
-## 13) API Response Contract
+## 12) Xác thực session, CSRF, CORS
 
-Backend standardized helpers are in `backend/src/utils/apiResponse.js`:
-
-- Success:
-
-```json
-{
-  "success": true,
-  "message": "...",
-  "data": {},
-  "errors": null
-}
-```
-
-- Failure:
-
-```json
-{
-  "success": false,
-  "message": "...",
-  "data": null,
-  "errors": []
-}
-```
-
-Health endpoint:
-
-- `GET /api/health` → `200` when service is healthy.
+- Backend phát hành `session_token` (HttpOnly cookie) và `csrf_token`
+- Frontend `axiosClient` tự thêm `x-csrf-token` cho `POST/PUT/PATCH/DELETE`
+- `withCredentials: true` bật sẵn
+- CORS chỉ cho origin hợp lệ từ `ALLOWED_ORIGINS` / `FRONTEND_ORIGIN`
 
 ---
 
-## 14) Session, Cookie, CSRF
+## 13) Realtime Chat (Socket.IO)
 
-### 14.1 Core mechanism
-
-- Backend issues `session_token` (HttpOnly cookie) after login.
-- Backend issues `csrf_token` (cookie), and frontend sends it back via `x-csrf-token` for mutating requests.
-
-### 14.2 Frontend axios client
-
-File: `frontend/src/api/axiosClient.js`
-
-- `withCredentials: true`
-- Automatically adds `x-csrf-token` for `POST/PUT/PATCH/DELETE`
-- Emits `auth:session-expired` event on `401/403`
-
-### 14.3 CORS
-
-File: `backend/src/config/cors.js`
-
-- Allows only origins in `ALLOWED_ORIGINS` / `FRONTEND_ORIGIN`
-- Does not allow wildcard `*` when `credentials: true`
+- Backend socket nằm trong `backend/src/server.js`
+- Frontend socket service: `frontend/src/services/chat/socketService.js`
+- Endpoint socket mặc định theo `window.location.origin`, có thể override qua `VITE_SOCKET_URL`
+- Vite dev proxy đã có `/socket.io` (ws enabled)
 
 ---
 
-## 15) Realtime Chat with Socket.IO
+## 14) Backup / Restore DB
 
-### Backend
-
-- Initialized in `backend/src/server.js`
-- Socket authentication via JWT handshake
-- Supports request/accept/reject flows, room joining, history, notifications
-
-### Frontend
-
-- Service: `frontend/src/services/chat/socketService.js`
-- Main functions include: `connectSocket`, `disconnectSocket`, `requestChat`, `acceptChat`, `rejectChat`, `sendMessage`, and event listener helpers
-
-> Technical note: current chat socket handshake still reads token from localStorage. If you plan to fully standardize realtime auth to cookie-session, update this part accordingly.
-
----
-
-## 16) Database Backup / Restore
-
-Scripts:
+Script:
 
 - `scripts/db-backup.js`
 - `scripts/db-restore.js`
 
-### Backup
-
-Dry-run:
+Backup dry-run:
 
 ```bash
 node scripts/db-backup.js --dry-run
 ```
 
-Execute:
+Backup thật:
 
 ```bash
 node scripts/db-backup.js --output ./backups/backup.sql
 ```
 
-### Restore
-
-Dry-run:
+Restore dry-run:
 
 ```bash
 node scripts/db-restore.js --dry-run --file ./backup.sql
 ```
 
-Execute (requires `--yes`):
+Restore thật (bắt buộc `--yes`):
 
 ```bash
 node scripts/db-restore.js --file ./backup.sql --yes
 ```
 
-Detailed checklist: `docs/runbooks/backup-restore.md`.
-
 ---
 
-## 17) Observability & Operations
-
-### Logging
+## 15) Observability & vận hành
 
 - Logger: `backend/src/utils/logger.js`
-- Log level controlled by `LOG_LEVEL` / `NODE_ENV`
-- Request correlation with `x-request-id` in `backend/src/app.js`
-- Socket telemetry in `backend/src/server.js` logs event duration/outcome for `requestChat`, `openActiveRoom`, `sendMessage`
-- Slow socket events are promoted to warning logs using `SOCKET_SLOW_THRESHOLD_MS` (default `300ms`)
+- Correlation ID: `x-request-id`
+- Socket telemetry: log duration/outcome cho event realtime
+- Slow socket threshold qua `SOCKET_SLOW_THRESHOLD_MS`
 
-### Incident monitoring
+Khuyến nghị tham khảo runbook trước khi deploy:
 
-- Incident response runbook: `docs/runbooks/incident-response.md`
-- Minimum monitoring baseline: health endpoint, 5xx errors, timeouts, DB connection errors
+- Incident response
+- Backup/restore
+- Hardening checklist
 
 ---
 
-## 18) Pre-release Hardening Checklist
+## 16) Bảo mật & hardening
 
-Minimum commands to run:
+- Không dùng secret thật trong template (`.env.example`, compose)
+- Không commit file env runtime
+- Rotate secret ngay khi nghi ngờ lộ lọt (`DB_PASSWORD`, `JWT_SECRET`, API keys, encryption keys)
+- Validate compose trước khi chạy:
 
 ```bash
-npm run lint --prefix backend && npm run test --prefix backend
-npm run lint --prefix frontend && npm run test --prefix frontend && npm run build:ci --prefix frontend
+docker compose config
 docker compose -f docker-compose.prod.yml config
 ```
 
-Then validate the full checklist:
+---
 
-- `docs/hardening-checklist.md`
+## 17) Troubleshooting nhanh
+
+### Thiếu biến môi trường
+
+- Lỗi kiểu `Missing required environment variables...`
+- So sánh `.env` với `.env.example`, bổ sung thiếu, restart service/container
+
+### Lỗi CORS
+
+- Kiểm tra `FRONTEND_ORIGIN` / `ALLOWED_ORIGINS`
+
+### Lỗi CSRF 403
+
+- Đảm bảo request đi qua `axiosClient`
+- Kiểm tra cookie `csrf_token` và header `x-csrf-token`
+
+### Prod compose báo thiếu biến
+
+- Chạy `docker compose -f docker-compose.prod.yml config` để thấy biến thiếu do `:?`
 
 ---
 
-## 19) Troubleshooting
-
-### 19.1 CI cannot find backend tests
-
-Current fix in scripts:
-
-```json
-"test:ci": "node --test"
-```
-
-If it happens again, re-check `backend/package.json`.
-
-### 19.2 Missing env error when starting backend
-
-Typical messages:
-
-- `Missing required environment variables: ...`
-- `Missing required environment variable: DATA_ENCRYPTION_KEY`
-
-How to fix:
-
-1. Compare `.env` against `.env.example`
-2. Add all required variables
-3. Restart backend/container
-
-### 19.3 CORS error: `Origin is not allowed by CORS`
-
-- Check `ALLOWED_ORIGINS` / `FRONTEND_ORIGIN`
-- Ensure frontend is opened from an allowed origin
-
-### 19.4 CSRF 403 error
-
-- Ensure mutating requests go through `axiosClient`
-- Verify `csrf_token` cookie exists
-- Verify `x-csrf-token` header is sent
-
-### 19.5 Production compose fails due to missing variables
-
-`docker-compose.prod.yml` uses `:?` so missing vars fail fast.
-
-Use:
-
-```bash
-docker compose -f docker-compose.prod.yml config
-```
-
-This command will show which variables are missing.
-
----
-
-## 20) Related Documentation
+## 18) Tài liệu liên quan
 
 - Hardening checklist: `docs/hardening-checklist.md`
 - Observability: `docs/observability.md`
@@ -550,3 +383,11 @@ This command will show which variables are missing.
 
 ---
 
+## Quick Release Gate (khuyến nghị trước khi merge/deploy)
+
+```bash
+npm run lint --prefix backend && npm run test --prefix backend
+npm run lint --prefix frontend && npm run test --prefix frontend && npm run build:ci --prefix frontend
+docker compose config
+docker compose -f docker-compose.prod.yml config
+```

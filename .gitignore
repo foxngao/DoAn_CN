@@ -32,6 +32,10 @@ jspm_packages/
 .env.test
 .env.local
 
+# Allow tracked environment templates
+!.env.example
+!frontend/.env.example
+
 # Coverage directory used by tools like istanbul
 coverage/
 

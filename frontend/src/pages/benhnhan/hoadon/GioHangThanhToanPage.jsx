@@ -170,7 +170,6 @@ const GioHangThanhToanPage = () => {
         window.history.replaceState({}, '', newUrl);
       }, 12000);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, maBN]);
   
   const loadLichDaHuy = async () => {

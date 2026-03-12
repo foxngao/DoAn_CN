@@ -1,7 +1,8 @@
 import { io } from 'socket.io-client';
 
-// URL của backend, Vite sẽ proxy qua /api, nhưng socket cần URL đầy đủ
-const BACKEND_URL = 'http://localhost:4000'; 
+const trimTrailingSlash = (url = '') => url.replace(/\/+$/, '');
+const fallbackOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000';
+const BACKEND_URL = trimTrailingSlash(import.meta.env.VITE_SOCKET_URL || fallbackOrigin);
 let socket;
 
 /**

@@ -41,6 +41,37 @@ test("calls next and attaches user for valid bearer token", () => {
   assert.equal(req.user.role, payload.role);
 });
 
+test("returns 403 when provided token is invalid", () => {
+  const req = { headers: { authorization: "Bearer invalid.token.value" } };
+  const res = createMockRes();
+  let nextCalled = false;
+
+  authMiddleware(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(res.statusCode, 403);
+  assert.deepEqual(res.payload, { thongBao: "Token không hợp lệ hoặc đã hết hạn" });
+  assert.equal(nextCalled, false);
+});
+
+test("calls next and attaches user when valid cookie token is provided", () => {
+  const payload = { maTK: "TKCOOKIE", role: "BENHNHAN" };
+  const token = jwt.sign(payload, process.env.JWT_SECRET);
+  const req = { headers: {}, cookies: { session_token: token } };
+  const res = createMockRes();
+  let nextCalled = false;
+
+  authMiddleware(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, true);
+  assert.equal(res.statusCode, null);
+  assert.equal(req.user.maTK, payload.maTK);
+  assert.equal(req.user.role, payload.role);
+});
+
 function createMockRes() {
   return {
     statusCode: null,

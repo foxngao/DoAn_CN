@@ -231,8 +231,10 @@ exports.momoIpn = async (req, res) => {
     const hoaDon = await HoaDon.findByPk(realMaHD);
     if (!hoaDon) return res.status(404).json({ message: "Order not found" });
 
+    const normalizedResultCode = Number(resultCode);
+
     // Chỉ cập nhật nếu giao dịch thành công (resultCode = 0)
-    if (resultCode === 0) {
+    if (normalizedResultCode === 0) {
       if (hoaDon.trangThai !== "DA_THANH_TOAN") {
         hoaDon.trangThai = "DA_THANH_TOAN";
         await hoaDon.save();
