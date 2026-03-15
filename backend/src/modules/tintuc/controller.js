@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const db = require("../../models");
+const { sanitizeTinTucHtml } = require("./sanitizer");
 const TinTuc = db.TinTuc;
 const NhanSuYTe = db.NhanSuYTe;
 
@@ -58,6 +59,7 @@ exports.getOne = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { tieuDe, tomTat, noiDung, loai, hinhAnh } = req.body;
+    const sanitizedNoiDung = sanitizeTinTucHtml(noiDung);
     const maNS = req.user?.maNS || req.body.maNS;
 
     if (!maNS) {
@@ -69,7 +71,7 @@ exports.create = async (req, res) => {
       maTin,
       tieuDe,
       tomTat,
-      noiDung,
+      noiDung: sanitizedNoiDung,
       loai: loai || "TIN_TUC",
       hinhAnh,
       maNS,
@@ -90,12 +92,13 @@ exports.update = async (req, res) => {
   try {
     const { maTin } = req.params;
     const { tieuDe, tomTat, noiDung, loai, hinhAnh, trangThai } = req.body;
+    const sanitizedNoiDung = sanitizeTinTucHtml(noiDung);
 
     const [updated] = await TinTuc.update(
       {
         tieuDe,
         tomTat,
-        noiDung,
+        noiDung: sanitizedNoiDung,
         loai,
         hinhAnh,
         trangThai

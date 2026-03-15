@@ -9,6 +9,8 @@ dist/
 .env.*
 backend/.env
 backend/.env.*
+frontend/.env
+frontend/.env.*
 .hive/
 
 # MacOS
@@ -41,3 +43,7 @@ coverage/
 
 # Build output
 build/
+
+# Security audit artifacts (generated)
+backend-audit-*.json
+frontend-audit-*.json

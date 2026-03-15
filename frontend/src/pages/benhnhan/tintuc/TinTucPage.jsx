@@ -3,6 +3,7 @@ import { getAllTinTuc, getOneTinTuc } from "../../../services/tintuc/tintucServi
 import { Link } from "react-router-dom";
 import { Newspaper, Search, Calendar, Eye, ArrowRight } from 'lucide-react';
 import dayjs from 'dayjs';
+import DOMPurify from "dompurify";
 
 const TinTucPage = () => {
   const [tinTucList, setTinTucList] = useState([]);
@@ -112,7 +113,14 @@ const TinTucPage = () => {
               {selectedTin.tomTat && (
                 <p className="text-lg text-gray-700 mb-4 font-medium">{selectedTin.tomTat}</p>
               )}
-              <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedTin.noiDung }} />
+              <div
+                className="prose max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(selectedTin.noiDung || "", {
+                    USE_PROFILES: { html: true },
+                  }),
+                }}
+              />
             </div>
           </div>
         </div>

@@ -38,9 +38,7 @@ router.post("/register",registerValidationRules, validateMiddleware, controller.
 router.post("/login", loginValidator, validateMiddleware, controller.login);
 router.post("/google-login", controller.googleLogin);
 router.post("/logout", controller.logout);
-router.get("/ma-xac-thuc/:maTaiKhoan", controller.taoMaXacThuc);
 router.post("/doi-mat-khau", changePasswordRules, controller.doiMatKhau);
-router.post("/quenmatkhau", controller.quenMatKhau);
 router.post("/forgot-password", controller.forgotPassword);
 router.post("/reset-password", controller.resetPassword);
 router.get("/me", authMiddleware, controller.getCurrentUser);

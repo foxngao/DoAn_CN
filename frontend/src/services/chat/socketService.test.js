@@ -18,21 +18,31 @@ describe("socketService connectSocket", () => {
   afterEach(() => {
     disconnectSocket();
     localStorage.clear();
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
   });
 
   it("connects socket using current origin by default", () => {
-    localStorage.setItem("token", "abc-token");
-
     connectSocket();
 
     expect(io).toHaveBeenCalledTimes(1);
     expect(io).toHaveBeenCalledWith(
-      window.location.origin,
+      "http://localhost:4000",
       expect.objectContaining({
-        auth: {
-          token: "Bearer abc-token",
-        },
+        withCredentials: true,
+      })
+    );
+  });
+
+  it("socket override uses VITE_SOCKET_URL", () => {
+    vi.stubEnv("VITE_SOCKET_URL", "https://socket.override.duongminhtien.io.vn/");
+
+    connectSocket();
+
+    expect(io).toHaveBeenCalledWith(
+      "https://socket.override.duongminhtien.io.vn",
+      expect.objectContaining({
+        withCredentials: true,
       })
     );
   });

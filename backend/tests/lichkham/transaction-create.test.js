@@ -193,8 +193,17 @@ function setupHappyPathPrerequisites() {
 
 function futureDate() {
   const d = new Date();
+  d.setHours(12, 0, 0, 0);
   d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+
+  while (d.getDay() === 0) {
+    d.setDate(d.getDate() + 1);
+  }
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function createMockRes() {

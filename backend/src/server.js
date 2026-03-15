@@ -7,6 +7,8 @@ const jwt = require("jsonwebtoken");
 const chatService = require("./chat/chatService"); 
 const env = require("./config/env");
 const logger = require("./utils/logger");
+const { createSocketCorsOptions } = require("./config/originPolicy");
+const { createSocketAuthMiddleware } = require("./chat/socketAuth");
 
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = env.JWT_SECRET;
@@ -47,43 +49,19 @@ const server = http.createServer(app);
 
 // Khởi tạo Socket.IO server
 const io = new Server(server, {
-  cors: {
-    origin: ["http://localhost:5173", "http://localhost:4000", "http://localhost:5174","http://localhost:5175" ], 
-    methods: ["GET", "POST"],
-    credentials: true
-  }
+  cors: createSocketCorsOptions(),
 });
 
 // Cache để lưu trữ các yêu cầu đang chờ xử lý (requestKey -> { senderId, receiverId, timestamp })
 const pendingRequests = {}; 
 
 // Middleware xác thực JWT cho MỖI kết nối Socket.IO
-io.use((socket, next) => {
-  const authHeader = socket.handshake.auth.token;
-  
-  if (!authHeader) {
-    return next(new Error("Xác thực thất bại: Không có token"));
-  }
-
-  // SỬA LỖI CUỐI CÙNG: Xử lý định dạng token an toàn
-  const parts = authHeader.split(" ");
-  // Lấy token, loại bỏ "Bearer " nếu tồn tại
-  const token = parts.length === 2 && parts[0] === 'Bearer' ? parts[1] : authHeader;
-  
-  if (!token) {
-       return next(new Error("Xác thực thất bại: Token không hợp lệ"));
-  }
-
-  jwt.verify(token, SECRET_KEY, (err, decoded) => {
-    if (err) {
-      console.error("Xác thực Socket thất bại:", err.message); 
-      return next(new Error("Xác thực thất bại: Token không hợp lệ"));
-    }
-    // Gán thông tin user (payload từ JWT) vào socket
-    socket.user = decoded; // VD: { maTK: '...', tenDangNhap: '...', maNhom: '...' }
-    next();
-  });
-});
+io.use(
+  createSocketAuthMiddleware({
+    secretKey: SECRET_KEY,
+    logger,
+  })
+);
 
 // Xử lý các sự kiện khi client kết nối
 io.on("connection", (socket) => {

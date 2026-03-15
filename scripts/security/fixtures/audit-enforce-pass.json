@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "scope": "backend",
+      "severity": "high",
+      "advisory": "GHSA-AAAA-BBBB-CCCC",
+      "url": "https://github.com/advisories/GHSA-AAAA-BBBB-CCCC",
+      "package": "backend-high-risk-lib",
+      "range": "<=3.2.1"
+    }
+  ]
+}

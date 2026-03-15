@@ -10,6 +10,7 @@ import {
   deleteItemGioHang,
 } from "../../../services/hoadon_BN/hoadonService";
 import axios from "../../../api/axiosClient";
+import { isCartNotFoundError } from "../../../services/hoadon_BN/hoadonService";
 
 import {
   getAllThuoc,
@@ -196,14 +197,18 @@ const GioHangThanhToanPage = () => {
     }
   };
 
-  // ✅ Load giỏ hàng - backend đã trả về 200 với data rỗng nếu không có
+  // ✅ Load giỏ hàng - keep backend 404 semantics; map cart-not-found to empty UI state.
   const loadGioHang = useCallback(async () => {
     setLoadingGioHang(true);
     try {
       const res = await getGioHang(maBN);
       setGioHang(res.data.data?.chiTiet || []);
     } catch (err) {
-      // Không còn lỗi 404 nữa vì backend đã xử lý, nhưng vẫn catch để an toàn
+      if (isCartNotFoundError(err)) {
+        setGioHang([]);
+        return;
+      }
+
       console.error("Lỗi tải giỏ hàng:", err);
       setGioHang([]);
     } finally {

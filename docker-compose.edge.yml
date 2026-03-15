@@ -1,0 +1,13 @@
+services:
+  caddy:
+    image: caddy:2.8.4
+    restart: unless-stopped
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - hospital-network
+
+networks:
+  hospital-network:
+    name: ${EDGE_NETWORK:-hospital-network}

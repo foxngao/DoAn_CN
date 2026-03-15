@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getGioHang } from "../../services/hoadon/hoadonService";
+import { getGioHang, isCartNotFoundError } from "../../services/hoadon_BN/hoadonService";
 
 const GioHangBenhNhan = () => {
   const [maBN, setMaBN] = useState("");
@@ -10,6 +10,11 @@ const GioHangBenhNhan = () => {
       const res = await getGioHang(maBN);
       setGioHang(res.data.data?.chiTiet || []);
     } catch (err) {
+      if (isCartNotFoundError(err)) {
+        setGioHang([]);
+        return;
+      }
+
       console.error("❌ Không tìm thấy giỏ hàng:", err);
       alert("❌ Bệnh nhân chưa có giỏ hàng.");
       setGioHang([]);

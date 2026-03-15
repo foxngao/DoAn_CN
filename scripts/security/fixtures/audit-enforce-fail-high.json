@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "scope": "backend",
+      "severity": "critical",
+      "advisory": "GHSA-NOT-EXCEPTED-0001",
+      "url": "https://github.com/advisories/GHSA-NOT-EXCEPTED-0001",
+      "package": "critical-lib",
+      "range": "<=9.9.9"
+    }
+  ]
+}

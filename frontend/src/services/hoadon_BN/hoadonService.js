@@ -1,4 +1,8 @@
 import axios from "../../api/axiosClient";
+import { CART_NOT_FOUND_CODE } from "../../api/axiosClient";
+
+export const isCartNotFoundError = (error) =>
+  Boolean(error?.isCartNotFound || error?.code === CART_NOT_FOUND_CODE);
 
 export const getGioHang = (maBN) => axios.get(`/hoadon/giohang/${maBN}`);
 export const addToGioHang = (data) => axios.post("/hoadon/giohang", data);

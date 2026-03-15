@@ -1,4 +1,4 @@
-const { TaiKhoan, BenhNhan, BacSi, NhomQuyen, HoSoBenhAn } = require("../../models");
+const { TaiKhoan, BacSi, NhomQuyen, HoSoBenhAn, BenhNhan } = require("../../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
@@ -9,6 +9,7 @@ const otpService = require("../../OTP/otp.service");
 const blockchainService = require("../../services/blockchain.service");
 const { ok, fail } = require("../../utils/apiResponse");
 const env = require("../../config/env");
+const logger = require("../../utils/logger");
 
 const SESSION_COOKIE_NAME = "session_token";
 const CSRF_COOKIE_NAME = "csrf_token";
@@ -110,9 +111,6 @@ function buildAuthResponsePayload(user, nhomQuyen, extras = {}) {
   };
 }
 
-
-const maXacThucMap = {}; 
-
 // === HÀM TẠO TÀI KHOẢN ===
 /*
  [POST] /auth/register
@@ -123,7 +121,7 @@ exports.register = async (req, res) => {
   const { tenDangNhap, matKhau, email, maNhom, otpCode } = req.body;
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
   if (!passwordRegex.test(matKhau)) {
-    console.log("⛔ Chặn đăng ký vì mật khẩu yếu:", matKhau);
+    logger.warn("Weak password registration rejected", { tenDangNhap, email, maNhom });
     return fail(res, {
       message: "Mật khẩu KHÔNG ĐẠT YÊU CẦU: Phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.",
       status: 422,
@@ -359,14 +357,6 @@ exports.getCurrentUser = async (req, res) => {
   }
 };
 
-// === HÀM TẠO MÃ XÁC THỰC (ĐÃ CHUYỂN SANG EXPORTS) ===
-exports.taoMaXacThuc = (req, res) => {
-  const { maTaiKhoan } = req.params;
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  maXacThucMap[maTaiKhoan] = code; 
-  res.json({ success: true, message: "Mã xác thực của bạn là: " + code });
-};
-
 // === HÀM ĐỔI MẬT KHẨU (ĐÃ CHUYỂN SANG EXPORTS) ===
 exports.doiMatKhau = async (req, res) => {
   const { maTK, matKhauCu, matKhauMoi } = req.body;
@@ -393,31 +383,6 @@ exports.doiMatKhau = async (req, res) => {
   }
 };
 
-// === HÀM QUÊN MẬT KHẨU (DEMO CŨ) (ĐÃ CHUYỂN SANG EXPORTS) ===
-exports.quenMatKhau = async (req, res) => {
-  const { maTK, maBenhNhan, email } = req.body;
-  try {
-    const benhNhan = await BenhNhan.findByPk(maBenhNhan);
-    const taiKhoan = await TaiKhoan.findByPk(maTK);
-
-    if (!taiKhoan)
-      return res.status(400).json({ success: false, message: "Tài khoản không tồn tại" });
-
-    if (!benhNhan || benhNhan.email !== email)
-      return res.status(400).json({ success: false, message: "Email không khớp" });
-
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    // maXacThucMap[maTK] = code; // Dùng map cũ
-
-    console.log(`✅ Mã xác thực gửi tới email ${email}: ${code}`);
-    return res.json({ success: true, message: "Mã xác thực đã gửi (demo)", maXacThuc: code });
-  } catch (err) {
-    console.error("❌ Lỗi quên mật khẩu:", err);
-    res.status(500).json({ message: "Lỗi server" });
-  }
-};
-
-
 // === HÀM QUÊN MẬT KHẨU MỚI ===
 /*
 [POST] /auth/forgot-password - Yêu cầu gửi OTP
@@ -436,8 +401,8 @@ exports.forgotPassword = async (req, res) => {
     }
 
     if (typeof otpService !== 'undefined' && otpService.createAndSendOtp) {
-        const otpEntry = await otpService.createAndSendOtp(email, 'RESET_PASSWORD');
-        console.log(`🔑 [DEBUG] OTP Quên mật khẩu cho ${email}: ${otpEntry.otpCode}`);
+        await otpService.createAndSendOtp(email, 'RESET_PASSWORD');
+        logger.info("Forgot-password OTP issued", { email });
     } else {
         console.error("❌ otpService.createAndSendOtp không khả dụng.");
         return res.status(500).json({ message: "Dịch vụ OTP không khả dụng" });

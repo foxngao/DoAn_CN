@@ -1,6 +1,9 @@
 // vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolveDevProxyTarget } from './src/config/devProxyTarget';
+
+const devProxyTarget = resolveDevProxyTarget();
 
 export default defineConfig({
   plugins: [react()],
@@ -8,12 +11,12 @@ export default defineConfig({
     port: 5173, // hoặc 4000 nếu bạn muốn đổi
     proxy: {
       '/api': {
-        target: 'http://localhost:4000', // URL backend
+        target: devProxyTarget, // URL backend
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),
       },
       '/socket.io': {
-        target: 'http://localhost:4000',
+        target: devProxyTarget,
         changeOrigin: true,
         ws: true,
       },

@@ -132,7 +132,10 @@ cp frontend/.env.example frontend/.env
 ```
 
 - `VITE_GOOGLE_CLIENT_ID`: Google OAuth client ID
-- `VITE_SOCKET_URL`: optional Socket.IO endpoint override (empty = use `window.location.origin`)
+- `VITE_API_ORIGIN`: optional API origin override (empty = auto map from current host)
+- `VITE_UPLOAD_ORIGIN`: optional upload origin override (empty = follow API origin)
+- `VITE_SOCKET_URL`: optional Socket.IO endpoint override (empty = follow API origin)
+- `VITE_DEV_PROXY_TARGET`: optional Vite dev proxy target (default: `http://localhost:4000`)
 
 > ⚠️ Never commit secret-bearing runtime files: `.env`, `backend/.env`, `frontend/.env`.
 
@@ -259,16 +262,45 @@ npm run build:ci --prefix frontend
 
 `build:ci` includes a bundle-budget gate to prevent bundle-size regressions.
 
+### Security audit baseline tools
+
+```bash
+node scripts/security/capture-npm-audit.cjs --prefix backend --out backend-audit-baseline.json
+node scripts/security/capture-npm-audit.cjs --prefix frontend --out frontend-audit-baseline.json
+node scripts/security/validate-audit-policy.cjs --audit backend-audit-baseline.json --policy docs/security/ci-policy.md --scope backend --mode baseline
+node scripts/security/validate-audit-policy.cjs --audit frontend-audit-baseline.json --policy docs/security/ci-policy.md --scope frontend --mode baseline
+```
+
+### Security regression spot checks (post-remediation)
+
+```bash
+npm run test:ci --prefix backend -- tests/security/xss-regression.test.js
+npm run test:ci --prefix backend -- tests/auth/otp-disclosure.test.js
+npm run test:ci --prefix backend -- tests/auth/register-benhnhan-regression.test.js
+npm run test:ci --prefix backend -- tests/chat/socket-session-regression.test.js
+npm run test:ci --prefix frontend -- src/pages/LoginPage.session.test.jsx
+npm run test:ci --prefix frontend -- src/pages/benhnhan/tintuc/TinTucRegression.test.jsx
+```
+
+These focused suites protect critical fixes introduced in the audit batch (stored XSS sanitization, OTP non-disclosure, and cookie/session socket auth consistency).
+
 ---
 
 ## 11) CI (GitHub Actions)
 
 Workflow file: `.github/workflows/ci.yml`
 
-Two parallel jobs:
+Three parallel jobs:
 
 1. `backend-quality`: install deps + lint + test:ci
 2. `frontend-quality`: install deps + lint + test:ci + build:ci
+3. `security-audit`: capture npm audit JSON + validate policy in `enforce` mode (blocking for PR to `main`)
+
+Blocking-gate contract check:
+
+```bash
+node scripts/security/assert-ci-blocking-gate.cjs --workflow .github/workflows/ci.yml --job security-audit --event pull_request --target-branches main --require-pr-blocking true
+```
 
 ---
 
@@ -278,6 +310,8 @@ Two parallel jobs:
 - Frontend `axiosClient` automatically sends `x-csrf-token` on `POST/PUT/PATCH/DELETE`
 - `withCredentials: true` is enabled by default
 - CORS allows only approved origins from `ALLOWED_ORIGINS` / `FRONTEND_ORIGIN`
+- Localhost defaults are auto-allowed only for development/unspecified env; staging/production require explicit localhost allowlist
+- Detailed policy and environment matrix: `docs/security/cors-policy.md`
 
 ---
 
@@ -333,9 +367,9 @@ node scripts/db-restore.js --file ./backup.sql --yes
 
 Recommended runbooks before release/deployment:
 
-- Incident response
-- Backup/restore
-- Hardening checklist
+- Security incident response (`docs/runbooks/security-incident-response.md`)
+- Dependency hotfix (`docs/runbooks/dependency-hotfix.md`)
+- Remediation rollout checklist (`docs/release/remediation-rollout-checklist.md`)
 
 ---
 
@@ -344,6 +378,8 @@ Recommended runbooks before release/deployment:
 - Never place real secrets in templates (`.env.example`, compose defaults)
 - Never commit runtime env files
 - Rotate secrets immediately if exposure is suspected (`DB_PASSWORD`, `JWT_SECRET`, API keys, encryption keys)
+- Policy contract: `docs/security/ci-policy.md`
+- Secret defer/rotation checklist: `docs/security/secret-rotation-checklist.md`
 - Validate compose files before running:
 
 ```bash
@@ -377,18 +413,29 @@ docker compose -f docker-compose.prod.yml config
 
 ## 18) Related Documentation
 
-- Hardening checklist: `docs/hardening-checklist.md`
-- Observability: `docs/observability.md`
-- Incident response: `docs/runbooks/incident-response.md`
-- Backup/restore runbook: `docs/runbooks/backup-restore.md`
+- Security remediation baseline: `docs/security/remediation-baseline.md`
+- Backend audit baseline: `docs/security/audit-baseline-backend.md`
+- Frontend audit baseline: `docs/security/audit-baseline-frontend.md`
+- CI security policy: `docs/security/ci-policy.md`
+- Security incident response runbook: `docs/runbooks/security-incident-response.md`
+- Dependency hotfix runbook: `docs/runbooks/dependency-hotfix.md`
+- Chat auth troubleshooting runbook: `docs/runbooks/chat-auth-troubleshooting.md`
+- Remediation rollout checklist: `docs/release/remediation-rollout-checklist.md`
+- Observability guide: section `15) Observability & Operations` in this README
+- Backup/restore guide: section `14) Database Backup / Restore` in this README
 
 ---
 
 ## Quick Release Gate (recommended before merge/deploy)
 
 ```bash
-npm run lint --prefix backend && npm run test --prefix backend
-npm run lint --prefix frontend && npm run test --prefix frontend && npm run build:ci --prefix frontend
-docker compose config
-docker compose -f docker-compose.prod.yml config
+npm run lint --prefix backend && npm run test:ci --prefix backend
+npm run lint --prefix frontend && npm run test:ci --prefix frontend && npm run build:ci --prefix frontend
+node scripts/security/capture-npm-audit.cjs --prefix backend --out backend-audit-final.json
+node scripts/security/validate-audit-policy.cjs --audit backend-audit-final.json --policy docs/security/ci-policy.md --scope backend --mode enforce
+node scripts/security/capture-npm-audit.cjs --prefix frontend --out frontend-audit-final.json
+node scripts/security/validate-audit-policy.cjs --audit frontend-audit-final.json --policy docs/security/ci-policy.md --scope frontend --mode enforce
+node scripts/security/assert-ci-blocking-gate.cjs --workflow .github/workflows/ci.yml --job security-audit --event pull_request --target-branches main --require-pr-blocking true
 ```
+
+Expected result: all commands exit `0`.

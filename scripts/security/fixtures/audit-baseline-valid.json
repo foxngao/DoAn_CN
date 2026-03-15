@@ -1,0 +1,20 @@
+{
+  "findings": [
+    {
+      "scope": "backend",
+      "severity": "high",
+      "advisory": "GHSA-0000-0000-0001",
+      "url": "https://github.com/advisories/GHSA-0000-0000-0001",
+      "package": "demo-package",
+      "range": "<=1.0.0"
+    },
+    {
+      "scope": "backend",
+      "severity": "low",
+      "advisory": "GHSA-0000-0000-0002",
+      "url": "https://github.com/advisories/GHSA-0000-0000-0002",
+      "package": "demo-package-2",
+      "range": "<=2.0.0"
+    }
+  ]
+}

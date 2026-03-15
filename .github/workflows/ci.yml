@@ -4,6 +4,7 @@ on:
   push:
     branches: ["**"]
   pull_request:
+    branches: ["main"]
 
 jobs:
   backend-quality:
@@ -65,3 +66,38 @@ jobs:
 
       - name: Build frontend
         run: npm run build:ci --prefix frontend
+
+  security-audit:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Capture backend audit
+        run: node scripts/security/capture-npm-audit.cjs --prefix backend --out backend-audit-current.json
+
+      - name: Validate backend enforce policy
+        run: node scripts/security/validate-audit-policy.cjs --audit backend-audit-current.json --policy docs/security/ci-policy.md --scope backend --mode enforce
+
+      - name: Capture frontend audit
+        run: node scripts/security/capture-npm-audit.cjs --prefix frontend --out frontend-audit-current.json
+
+      - name: Validate frontend enforce policy
+        run: node scripts/security/validate-audit-policy.cjs --audit frontend-audit-current.json --policy docs/security/ci-policy.md --scope frontend --mode enforce

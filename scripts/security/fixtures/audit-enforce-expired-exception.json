@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "scope": "backend",
+      "severity": "high",
+      "advisory": "GHSA-EXPIRED-EXCEPTION-01",
+      "url": "https://github.com/advisories/GHSA-EXPIRED-EXCEPTION-01",
+      "package": "expired-exception-lib",
+      "range": "<=4.5.6"
+    }
+  ]
+}

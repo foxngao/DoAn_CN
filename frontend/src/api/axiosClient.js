@@ -6,6 +6,11 @@ export const emitSessionExpired = (payload = {}) => {
   window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: payload }));
 };
 
+export const CART_NOT_FOUND_CODE = "CART_NOT_FOUND";
+
+export const isCartNotFoundRequest = (url = "") =>
+  typeof url === "string" && url.includes("/hoadon/giohang/");
+
 const axiosClient = axios.create({
   baseURL: "/api", // 🔥 Kích hoạt proxy trong vite.config.js
   withCredentials: true,
@@ -47,21 +52,12 @@ axiosClient.interceptors.response.use(
       emitSessionExpired({ status, url: error.config?.url });
     }
 
-    // Suppress 404 errors cho endpoint giỏ hàng (giỏ hàng có thể không tồn tại sau khi đã tạo hóa đơn)
-    if (status === 404 && error.config?.url?.includes('/hoadon/giohang/')) {
-      // Trả về một response giả với data rỗng thay vì throw error
-      return Promise.resolve({
-        data: {
-          message: "Không tìm thấy giỏ hàng",
-          data: { gioHang: null, chiTiet: [] }
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: error.config
-      });
+    // Keep 404 semantics for cart endpoint, but expose explicit typed contract.
+    if (status === 404 && isCartNotFoundRequest(error.config?.url)) {
+      error.code = CART_NOT_FOUND_CODE;
+      error.isCartNotFound = true;
     }
-    // Các lỗi khác vẫn được xử lý bình thường
+
     return Promise.reject(error);
   }
 );

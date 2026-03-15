@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "../../../api/axiosClient"; 
 // SỬA QUAN TRỌNG: Đảm bảo import hàm verifyChain
 import { getHoSoByBenhNhan, getChiTietHoSo, verifyChain } from "../../../services/hoso_BN/hsbaService";
+import { buildUploadUrl } from "../../../config/runtimeEndpoints";
 import dayjs from "dayjs";
 
 const HoSoBenhAnPage = () => {
@@ -178,9 +179,6 @@ const HoSoBenhAnPage = () => {
   );
 };
 
-// --- BASE URL cho Backend (Dựa trên cấu hình Backend đang chạy ở cổng 4000) ---
-const BASE_BACKEND_URL = "http://localhost:4000"; 
-
 // --- Component Helper: Hiển thị liên kết File ---
 const FileLink = ({ dataUrl, label = "Xem ảnh đính kèm" }) => {
   if (!dataUrl) return (
@@ -190,10 +188,7 @@ const FileLink = ({ dataUrl, label = "Xem ảnh đính kèm" }) => {
     </div>
   );
   
-  // SỬA LỖI: Ghép BASE_BACKEND_URL với đường dẫn tương đối (ví dụ: /uploads/...)
-  const fullUrl = dataUrl.startsWith('/uploads/') 
-    ? `${BASE_BACKEND_URL}${dataUrl}` 
-    : dataUrl; // Giữ nguyên nếu là URL đầy đủ hoặc Base64
+  const fullUrl = buildUploadUrl(dataUrl);
 
   return (
     <div className="mt-3 pt-3 border-t border-gray-200">

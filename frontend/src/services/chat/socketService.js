@@ -1,22 +1,17 @@
 import { io } from 'socket.io-client';
+import { getSocketOrigin } from '../../config/runtimeEndpoints';
 
 const trimTrailingSlash = (url = '') => url.replace(/\/+$/, '');
-const fallbackOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000';
-const BACKEND_URL = trimTrailingSlash(import.meta.env.VITE_SOCKET_URL || fallbackOrigin);
+const resolveBackendUrl = () => trimTrailingSlash(getSocketOrigin());
 let socket;
 
 /**
  * Khởi tạo và kết nối socket với JWT
  */
 export const connectSocket = () => {
-  const rawToken = localStorage.getItem('token');
-  if (rawToken && (!socket || !socket.connected)) {
-    const token = rawToken.startsWith('Bearer ') ? rawToken : `Bearer ${rawToken}`;
-    socket = io(BACKEND_URL, {
-      // Gửi token qua handshake auth
-      auth: {
-        token
-      }
+  if (!socket || !socket.connected) {
+    socket = io(resolveBackendUrl(), {
+      withCredentials: true,
     });
 
     socket.on('connect', () => {
